@@ -2,6 +2,7 @@
 #include <vector>
 #include <cstdint>
 #include "ray.h"
+#include <limits>
 
 // Your ray tracer starts here.
 //
@@ -22,11 +23,19 @@ struct SDLState
 	int width, height; 
 };
 
+struct Sphere
+{
+	Vec3 center;
+	double radius;
+
+	Sphere(const Vec3& center, const double radius) : center(center), radius(radius) {}
+};
+
 bool initialize(SDLState &state);
 void cleanup(SDLState &state);
 uint32_t toPixel(const Vec3& color);
-Vec3 rayColor(const Ray& r);
-double hitSphere(const Vec3& center, double radius, const Ray& r);
+Vec3 rayColor(const Ray& r, const std::vector<Sphere>& spheres);
+double hitSphere(const Sphere& sphere, const Ray& r);
 
 int main(int argc, char* argv[])
 {
@@ -35,11 +44,22 @@ int main(int argc, char* argv[])
 	state.width = 640;
 	state.height = 420;
 	bool running = true;
+
 	std::vector<uint32_t> pixels(state.width * state.height);
+
 	Vec3 camera;
-	Vec3 sphere = Vec3(0, 0, -1);
+	Vec3 center = Vec3(0, 0, -1);
 	double viewportHeight = 2.0;	
 	double viewportWidth = viewportHeight * static_cast<double>(state.width) / state.height;
+
+
+	Sphere ball(center, 0.5);
+	Sphere ground(Vec3(0, -100.5, -1), 100);
+
+	std::vector<Sphere>spheres;
+
+	spheres.push_back(ball);
+	spheres.push_back(ground);
 
 	if (!initialize(state))
 	{
@@ -63,7 +83,7 @@ int main(int argc, char* argv[])
 			Vec3 direction(x, y, -1.0);
 			Ray r(camera, direction);
 
-			Vec3 color = rayColor(r);
+			Vec3 color = rayColor(r, spheres);
 			
 			pixels[j * state.width + i] = toPixel(color);
 
@@ -141,29 +161,40 @@ uint32_t toPixel(const Vec3& color)
 	return pixelColor;
 }
 
-Vec3 rayColor(const Ray& r)
+Vec3 rayColor(const Ray& r, const std::vector<Sphere> &spheres)
 {
-	Vec3 center = Vec3(0, 0, -1);
-	double t = (hitSphere(center, 0.5, r));
-	if (t > 0.0)
+	double closestT = std::numeric_limits<double>::infinity();
+	int hitIndex = -1;
+
+	for (int k = 0; k < spheres.size(); k++)
 	{
-		Vec3 hitPoint = r.at(t);
-		Vec3 normal = unitVector(hitPoint - center);
-		return 0.5 * (normal + Vec3(1, 1, 1));
+		double t = hitSphere(spheres[k], r);
+		if (t > 0 && t < closestT)
+		{
+			closestT = t;
+			hitIndex = k;
+		}
 	}
 
-	
+	if (hitIndex != -1)
+	{
+		Vec3 hitPoint = r.at(closestT);
+		Vec3 normal = unitVector(hitPoint - spheres[hitIndex].center);
+		return 0.5 * (normal + Vec3(1, 1, 1));
+
+	}
+
 	Vec3 unitDir = unitVector(r.direction);
 	double a = 0.5 * (unitDir.y + 1.0);
 	return ((1.0 - a) * Vec3(1.0, 1.0, 1.0) + a * Vec3(0.5, 0.7, 1.0));
 }
 
-double hitSphere(const Vec3& center, double radius, const Ray& r)
+double hitSphere(const Sphere& sphere, const Ray& r)
 {
-	Vec3 oc = center - r.origin;
+	Vec3 oc = sphere.center - r.origin;
 	double a = dot(r.direction, r.direction);
 	double b = -2.0 * dot(r.direction, oc);
-	double c = dot(oc, oc) - radius * radius;
+	double c = dot(oc, oc) - sphere.radius * sphere.radius;
 	double discriminant = b * b - 4 * a * c;
 
 	if (discriminant < 0)
