@@ -1,7 +1,7 @@
 #include <SDL3/SDL.h>
 #include <vector>
 #include <cstdint>
-#include "vec3.h"
+#include "ray.h"
 
 // Your ray tracer starts here.
 //
@@ -24,6 +24,8 @@ struct SDLState
 
 bool initialize(SDLState &state);
 void cleanup(SDLState &state);
+uint32_t toPixel(const Vec3& color);
+Vec3 rayColor(const Ray& r);
 
 int main(int argc, char* argv[])
 {
@@ -33,6 +35,9 @@ int main(int argc, char* argv[])
 	state.height = 420;
 	bool running = true;
 	std::vector<uint32_t> pixels(state.width * state.height);
+	Vec3 camera;
+	double viewportHeight = 2.0;	
+	double viewportWidth = viewportHeight * static_cast<double>(state.width) / state.height;
 
 	if (!initialize(state))
 	{
@@ -41,22 +46,27 @@ int main(int argc, char* argv[])
 	}
 
 	// looping through pixels
-	uint32_t b = 0;
-	uint32_t a = 255;
-
+	
 	for (int j = 0; j < state.height; j++)
 	{
 		for (int i = 0; i < state.width; i++)
 		{
 			double fractionX = static_cast<double>(i) / (state.width - 1);
-			uint32_t r = static_cast<uint32_t>(fractionX * 255);
 
 			double fractionY = static_cast<double>(j) / (state.height - 1);
-			uint32_t g = static_cast<uint32_t>(fractionY * 255);
 
-			uint32_t color = (a << 24) | (r << 16) | (g << 8) | b;
+			double x = (fractionX - 0.5) * viewportWidth;
+			double y = (0.5 - fractionY) * viewportHeight;
 
-			pixels[j * state.width + i] = color;
+			Vec3 direction(x, y, -1.0);
+			Ray r(camera, direction);
+
+			Vec3 color = rayColor(r);
+			
+			pixels[j * state.width + i] = toPixel(color);
+
+
+
 		
 		}
 	}
@@ -106,9 +116,8 @@ bool initialize(SDLState& state)
 	{
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), state.window);
 		return false;
-
-
 	}
+	return true;
 }
 
 void cleanup(SDLState& state)
@@ -117,4 +126,21 @@ void cleanup(SDLState& state)
 	SDL_DestroyRenderer(state.render);
 	SDL_DestroyWindow(state.window);
 	SDL_Quit();
+}
+
+uint32_t toPixel(const Vec3& color)
+{
+	uint32_t a = 255;
+	uint32_t r = static_cast<uint32_t>(color.x * 255);
+	uint32_t g = static_cast<uint32_t>(color.y * 255);
+	uint32_t b = static_cast<uint32_t>(color.z * 255);
+	uint32_t pixelColor = (a << 24) | (r << 16) | (g << 8) | b;
+	return pixelColor;
+}
+
+Vec3 rayColor(const Ray& r)
+{
+	Vec3 unitDir = unitVector(r.direction);
+	double a = 0.5 * (unitDir.y + 1.0);
+	return ((1.0 - a) * Vec3(1.0, 1.0, 1.0) + a * Vec3(0.5, 0.7, 1.0));
 }
