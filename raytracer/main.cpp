@@ -26,6 +26,7 @@ bool initialize(SDLState &state);
 void cleanup(SDLState &state);
 uint32_t toPixel(const Vec3& color);
 Vec3 rayColor(const Ray& r);
+bool hitSphere(const Vec3& center, double radius, const Ray&);
 
 int main(int argc, char* argv[])
 {
@@ -36,6 +37,7 @@ int main(int argc, char* argv[])
 	bool running = true;
 	std::vector<uint32_t> pixels(state.width * state.height);
 	Vec3 camera;
+	Vec3 sphere = Vec3(0, 0, -1);
 	double viewportHeight = 2.0;	
 	double viewportWidth = viewportHeight * static_cast<double>(state.width) / state.height;
 
@@ -110,6 +112,7 @@ bool initialize(SDLState& state)
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", SDL_GetError(), state.window);
 		return false;
 	}
+	SDL_SetRenderLogicalPresentation(state.render, state.width, state.height, SDL_LOGICAL_PRESENTATION_LETTERBOX);
 	state.tex = SDL_CreateTexture(state.render, SDL_PIXELFORMAT_ARGB8888,
 		SDL_TEXTUREACCESS_STREAMING, state.width, state.height);
 	if (!state.tex)
@@ -140,7 +143,22 @@ uint32_t toPixel(const Vec3& color)
 
 Vec3 rayColor(const Ray& r)
 {
+	if (hitSphere(Vec3(0, 0, -1), 0.5, r))
+	{
+		return Vec3(1, 0, 0);
+	}
 	Vec3 unitDir = unitVector(r.direction);
 	double a = 0.5 * (unitDir.y + 1.0);
 	return ((1.0 - a) * Vec3(1.0, 1.0, 1.0) + a * Vec3(0.5, 0.7, 1.0));
+}
+
+bool hitSphere(const Vec3& center, double radius, const Ray& r)
+{
+	Vec3 oc = center - r.origin;
+	double a = dot(r.direction, r.direction);
+	double b = -2.0 * dot(r.direction, oc);
+	double c = dot(oc, oc) - radius * radius;
+	double discriminant = b * b - 4 * a * c;
+
+	return discriminant >= 0;
 }
