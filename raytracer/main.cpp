@@ -26,7 +26,7 @@ bool initialize(SDLState &state);
 void cleanup(SDLState &state);
 uint32_t toPixel(const Vec3& color);
 Vec3 rayColor(const Ray& r);
-bool hitSphere(const Vec3& center, double radius, const Ray&);
+double hitSphere(const Vec3& center, double radius, const Ray&);
 
 int main(int argc, char* argv[])
 {
@@ -143,7 +143,7 @@ uint32_t toPixel(const Vec3& color)
 
 Vec3 rayColor(const Ray& r)
 {
-	if (hitSphere(Vec3(0, 0, -1), 0.5, r))
+	if (hitSphere(Vec3(0, 0, -1), 0.5, r) > 0)
 	{
 		return Vec3(1, 0, 0);
 	}
@@ -152,7 +152,7 @@ Vec3 rayColor(const Ray& r)
 	return ((1.0 - a) * Vec3(1.0, 1.0, 1.0) + a * Vec3(0.5, 0.7, 1.0));
 }
 
-bool hitSphere(const Vec3& center, double radius, const Ray& r)
+double hitSphere(const Vec3& center, double radius, const Ray& r)
 {
 	Vec3 oc = center - r.origin;
 	double a = dot(r.direction, r.direction);
@@ -160,5 +160,5 @@ bool hitSphere(const Vec3& center, double radius, const Ray& r)
 	double c = dot(oc, oc) - radius * radius;
 	double discriminant = b * b - 4 * a * c;
 
-	return discriminant >= 0;
+	return discriminant;
 }
