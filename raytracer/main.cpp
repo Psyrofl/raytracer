@@ -3,6 +3,7 @@
 #include <cstdint>
 #include "ray.h"
 #include <limits>
+#include <random>
 
 // Your ray tracer starts here.
 //
@@ -36,6 +37,7 @@ void cleanup(SDLState &state);
 uint32_t toPixel(const Vec3& color);
 Vec3 rayColor(const Ray& r, const std::vector<Sphere>& spheres);
 double hitSphere(const Sphere& sphere, const Ray& r);
+double randomDouble();
 
 int main(int argc, char* argv[])
 {
@@ -68,24 +70,34 @@ int main(int argc, char* argv[])
 	}
 
 	// looping through pixels
-	
+	int samples = 10;
 	for (int j = 0; j < state.height; j++)
 	{
 		for (int i = 0; i < state.width; i++)
 		{
-			double fractionX = static_cast<double>(i) / (state.width - 1);
+			Vec3 total(0, 0, 0);
 
-			double fractionY = static_cast<double>(j) / (state.height - 1);
+			for (int s = 0; s < samples; s++)
+			{
 
-			double x = (fractionX - 0.5) * viewportWidth;
-			double y = (0.5 - fractionY) * viewportHeight;
+				double fractionX = static_cast<double>(i + randomDouble()) / (state.width);
 
-			Vec3 direction(x, y, -1.0);
-			Ray r(camera, direction);
+				double fractionY = static_cast<double>(j + randomDouble()) / (state.height);
 
-			Vec3 color = rayColor(r, spheres);
+				double x = (fractionX - 0.5) * viewportWidth;
+				double y = (0.5 - fractionY) * viewportHeight;
+
+				Vec3 direction(x, y, -1.0);
+				Ray r(camera, direction);
+
+				Vec3 color = rayColor(r, spheres);
+				total = total + color;
+			}
 			
-			pixels[j * state.width + i] = toPixel(color);
+			Vec3 average = total * (1.0 / samples);
+
+			pixels[j * state.width + i] = toPixel(average);
+
 
 
 
@@ -205,4 +217,12 @@ double hitSphere(const Sphere& sphere, const Ray& r)
 	{
 		return ((-b - std::sqrt(discriminant)) / (2.0 * a));
 	}
+}
+
+double randomDouble()
+{
+	static std::uniform_real_distribution<double>  dist(0.0, 1.0);
+	static std::mt19937 generator;
+	double x =   dist(generator);
+	return x;
 }
