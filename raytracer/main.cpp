@@ -4,6 +4,7 @@
 #include "ray.h"
 #include <limits>
 #include <random>
+#include <algorithm>
 
 // Your ray tracer starts here.
 //
@@ -35,9 +36,12 @@ struct Sphere
 bool initialize(SDLState &state);
 void cleanup(SDLState &state);
 uint32_t toPixel(const Vec3& color);
-Vec3 rayColor(const Ray& r, const std::vector<Sphere>& spheres);
+Vec3 rayColor(const Ray& r, const std::vector<Sphere>& spheres, int depth);
 double hitSphere(const Sphere& sphere, const Ray& r);
 double randomDouble();
+Vec3 randomVec3();
+Vec3 randomUnitVector();
+
 
 int main(int argc, char* argv[])
 {
@@ -90,7 +94,7 @@ int main(int argc, char* argv[])
 				Vec3 direction(x, y, -1.0);
 				Ray r(camera, direction);
 
-				Vec3 color = rayColor(r, spheres);
+				Vec3 color = rayColor(r, spheres, 10);
 				total = total + color;
 			}
 			
@@ -166,22 +170,26 @@ void cleanup(SDLState& state)
 uint32_t toPixel(const Vec3& color)
 {
 	uint32_t a = 255;
-	uint32_t r = static_cast<uint32_t>(color.x * 255);
-	uint32_t g = static_cast<uint32_t>(color.y * 255);
-	uint32_t b = static_cast<uint32_t>(color.z * 255);
+	uint32_t r = static_cast<uint32_t>(std::sqrt(std::clamp(color.x, 0.0, 1.0)) * 255);
+	uint32_t g = static_cast<uint32_t>(std::sqrt(std::clamp(color.y,0.0,1.0)) * 255);
+	uint32_t b = static_cast<uint32_t>(std::sqrt(std::clamp(color.z, 0.0, 1.0)) * 255);
 	uint32_t pixelColor = (a << 24) | (r << 16) | (g << 8) | b;
 	return pixelColor;
 }
 
-Vec3 rayColor(const Ray& r, const std::vector<Sphere> &spheres)
+Vec3 rayColor(const Ray& r, const std::vector<Sphere> &spheres, int depth)
 {
+	if (depth <= 0)
+	{
+		return Vec3(0, 0, 0);
+	}
 	double closestT = std::numeric_limits<double>::infinity();
 	int hitIndex = -1;
 
 	for (int k = 0; k < spheres.size(); k++)
 	{
 		double t = hitSphere(spheres[k], r);
-		if (t > 0 && t < closestT)
+		if (t > 0.001 && t < closestT)
 		{
 			closestT = t;
 			hitIndex = k;
@@ -192,7 +200,9 @@ Vec3 rayColor(const Ray& r, const std::vector<Sphere> &spheres)
 	{
 		Vec3 hitPoint = r.at(closestT);
 		Vec3 normal = unitVector(hitPoint - spheres[hitIndex].center);
-		return 0.5 * (normal + Vec3(1, 1, 1));
+		Vec3 newDir = normal + randomUnitVector();
+		Ray rr(hitPoint, newDir);
+		return 0.5 * rayColor(rr, spheres, depth - 1);
 
 	}
 
@@ -225,4 +235,21 @@ double randomDouble()
 	static std::mt19937 generator;
 	double x =   dist(generator);
 	return x;
+}
+
+Vec3 randomVec3()
+{
+	return Vec3(2 * randomDouble() - 1, 2 * randomDouble() - 1, 2 * randomDouble() - 1);
+}
+
+Vec3 randomUnitVector()
+{
+	Vec3 p;
+	do
+	{
+		p = randomVec3();
+
+	} while (dot(p, p) > 1 || dot(p,p) < 1e-160);
+
+	return unitVector(p);
 }
