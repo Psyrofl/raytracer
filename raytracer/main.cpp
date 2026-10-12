@@ -29,8 +29,10 @@ struct Sphere
 {
 	Vec3 center;
 	double radius;
+	Vec3 albedo;
 
-	Sphere(const Vec3& center, const double radius) : center(center), radius(radius) {}
+
+	Sphere(const Vec3& center, const double radius, const Vec3&albedo) : center(center), radius(radius), albedo(albedo) {}
 };
 
 bool initialize(SDLState &state);
@@ -55,12 +57,16 @@ int main(int argc, char* argv[])
 
 	Vec3 camera;
 	Vec3 center = Vec3(0, 0, -1);
+	Vec3 groundVector = Vec3(0, -100.5, -1);
+	Vec3 ballColor = Vec3(0.1, 0.2, 0.5);
+	Vec3 groundColor = Vec3(0.8, 0.8, 0.0);
+
 	double viewportHeight = 2.0;	
 	double viewportWidth = viewportHeight * static_cast<double>(state.width) / state.height;
 
 
-	Sphere ball(center, 0.5);
-	Sphere ground(Vec3(0, -100.5, -1), 100);
+	Sphere ball(center, 0.5, ballColor);
+	Sphere ground(groundVector, 100, groundColor );
 
 	std::vector<Sphere>spheres;
 
@@ -202,7 +208,7 @@ Vec3 rayColor(const Ray& r, const std::vector<Sphere> &spheres, int depth)
 		Vec3 normal = unitVector(hitPoint - spheres[hitIndex].center);
 		Vec3 newDir = normal + randomUnitVector();
 		Ray rr(hitPoint, newDir);
-		return 0.5 * rayColor(rr, spheres, depth - 1);
+		return spheres[hitIndex].albedo *rayColor(rr, spheres, depth - 1);
 
 	}
 

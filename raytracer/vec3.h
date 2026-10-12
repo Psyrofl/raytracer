@@ -38,6 +38,13 @@ inline Vec3 operator*(const double k, const Vec3& u)
 
 }
 
+
+inline Vec3 operator*(const Vec3& u, const Vec3& v)
+{
+	return Vec3(u.x * v.x, u.y * v.y, u.z * v.z);
+
+}
+
 inline double dot(const Vec3& u, const Vec3& v)
 {
 	return (u.x * v.x + u.y * v.y + u.z * v.z);
