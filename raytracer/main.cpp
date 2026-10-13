@@ -30,9 +30,10 @@ struct Sphere
 	Vec3 center;
 	double radius;
 	Vec3 albedo;
+	bool isMetal;
 
 
-	Sphere(const Vec3& center, const double radius, const Vec3&albedo) : center(center), radius(radius), albedo(albedo) {}
+	Sphere(const Vec3& center, const double radius, const Vec3&albedo, const bool isMetal) : center(center), radius(radius), albedo(albedo), isMetal(isMetal) {}
 };
 
 bool initialize(SDLState &state);
@@ -65,13 +66,19 @@ int main(int argc, char* argv[])
 	double viewportWidth = viewportHeight * static_cast<double>(state.width) / state.height;
 
 
-	Sphere ball(center, 0.5, ballColor);
-	Sphere ground(groundVector, 100, groundColor );
+	Sphere ball(center, 0.5, ballColor, false);
+	Sphere ground(groundVector, 100, groundColor, false );
+	Sphere left(Vec3(-1, 0, -1), 0.5, Vec3(0.8, 0.8, 0.8), true);
+	Sphere right(Vec3(1, 0, -1), 0.5, Vec3(0.8, 0.6, 0.2), true);
+
 
 	std::vector<Sphere>spheres;
 
 	spheres.push_back(ball);
 	spheres.push_back(ground);
+	spheres.push_back(left);
+	spheres.push_back(right);
+
 
 	if (!initialize(state))
 	{
@@ -204,9 +211,18 @@ Vec3 rayColor(const Ray& r, const std::vector<Sphere> &spheres, int depth)
 
 	if (hitIndex != -1)
 	{
+		Vec3 newDir;
+
 		Vec3 hitPoint = r.at(closestT);
 		Vec3 normal = unitVector(hitPoint - spheres[hitIndex].center);
-		Vec3 newDir = normal + randomUnitVector();
+		if (spheres[hitIndex].isMetal)
+		{
+			newDir = reflect(r.direction, normal);
+		}
+		else
+		{
+			newDir = normal + randomUnitVector();
+		}
 		Ray rr(hitPoint, newDir);
 		return spheres[hitIndex].albedo *rayColor(rr, spheres, depth - 1);
 
