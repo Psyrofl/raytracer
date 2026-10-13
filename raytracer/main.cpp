@@ -25,15 +25,20 @@ struct SDLState
 	int width, height; 
 };
 
+enum class Material
+{
+	Diffuse, Metal, Glass
+};
+
 struct Sphere
 {
 	Vec3 center;
 	double radius;
 	Vec3 albedo;
-	bool isMetal;
+	Material material;
 	double fuzz;
 
-	Sphere(const Vec3& center, const double radius, const Vec3&albedo, const bool isMetal, const double fuzz) : center(center), radius(radius), albedo(albedo), isMetal(isMetal), fuzz(fuzz) {}
+	Sphere(const Vec3& center, const double radius, const Vec3& albedo, const Material material, const double fuzz) : center(center), radius(radius), albedo(albedo), material(material), fuzz(fuzz) {}
 };
 
 bool initialize(SDLState &state);
@@ -66,10 +71,10 @@ int main(int argc, char* argv[])
 	double viewportWidth = viewportHeight * static_cast<double>(state.width) / state.height;
 
 
-	Sphere ball(center, 0.5, ballColor, false, 0);
-	Sphere ground(groundVector, 100, groundColor, false, 0);
-	Sphere left(Vec3(-1, 0, -1), 0.5, Vec3(0.8, 0.8, 0.8), true, 0.3);
-	Sphere right(Vec3(1, 0, -1), 0.5, Vec3(0.8, 0.6, 0.2), true, 1);
+	Sphere ball(center, 0.5, ballColor, Material::Diffuse, 0);
+	Sphere ground(groundVector, 100, groundColor, Material::Diffuse, 0);
+	Sphere left(Vec3(-1, 0, -1), 0.5, Vec3(0.8, 0.8, 0.8), Material::Metal, 0.3);
+	Sphere right(Vec3(1, 0, -1), 0.5, Vec3(0.8, 0.6, 0.2), Material::Metal, 1);
 
 
 	std::vector<Sphere>spheres;
@@ -215,7 +220,7 @@ Vec3 rayColor(const Ray& r, const std::vector<Sphere> &spheres, int depth)
 
 		Vec3 hitPoint = r.at(closestT);
 		Vec3 normal = unitVector(hitPoint - spheres[hitIndex].center);
-		if (spheres[hitIndex].isMetal)
+		if (spheres[hitIndex].material == Material::Metal)
 		{
 			newDir = unitVector(reflect(r.direction, normal)) + spheres[hitIndex].fuzz * randomUnitVector();
 		}
