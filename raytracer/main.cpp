@@ -68,14 +68,13 @@ int main(int argc, char* argv[])
 
 	std::vector<uint32_t> pixels(state.width * state.height);
 
-	Vec3 lookFrom = Vec3(-2,2,1);
-	Vec3 lookAt = Vec3(0, 0, -1);
+	Vec3 lookFrom = Vec3(13,2,3);
+	Vec3 lookAt = Vec3(0, 0, 0);
 	Vec3 vup = Vec3(0, 1, 0);
-	double defocusAngle = 10.0;
-	double focusDist = 3.4;
+	double defocusAngle = 0.6;
+	double focusDist = 10;
 
-	double defocusRadius = focusDist * tan(defocusAngle * 2 * std::numbers::pi / 360);
-	double focalLength = lookFrom.length() - lookAt.length();
+	double defocusRadius = focusDist * tan(defocusAngle * 2 * std::numbers::pi / 360 / 2);
 	const double vfov = 20;
 	double h = std::tan(vfov * 2 * std::numbers::pi / 360 / 2);
 	double viewportHeight = 2.0 * h * focusDist;
@@ -90,27 +89,55 @@ int main(int argc, char* argv[])
 
 
 	Vec3 center = Vec3(0, 0, -1);
-	Vec3 groundVector = Vec3(0, -100.5, -1);
+	Vec3 groundVector = Vec3(0, -1000, 0);
 	Vec3 ballColor = Vec3(0.1, 0.2, 0.5);
-	Vec3 groundColor = Vec3(0.8, 0.8, 0.0);
+	Vec3 groundColor = Vec3(0.5, 0.5, 0.5);
 
 
+	Sphere ground(groundVector, 1000, groundColor, Material::Diffuse, 0, 1.0);
+	Sphere glass(Vec3(0, 1, 0), 1, Vec3(1, 1, 1), Material::Glass, 0, 1.5);
+	Sphere metal(Vec3(4, 1, 0), 1, Vec3(0.7, 0.6, 0.5), Material::Metal, 0, 1.0);
+	Sphere brown(Vec3(-4, 1, 0), 1, Vec3(0.4, 0.2, 0.1), Material::Diffuse, 0, 1.0 / 1.5);
 
-
-	Sphere ball(center, 0.5, ballColor, Material::Diffuse, 0, 1.0);
-	Sphere ground(groundVector, 100, groundColor, Material::Diffuse, 0, 1.0);
-	Sphere left(Vec3(-1, 0, -1), 0.5, Vec3(1, 1, 1), Material::Glass, 0, 1.5);
-	Sphere right(Vec3(1, 0, -1), 0.5, Vec3(0.8, 0.6, 0.2), Material::Metal, 1, 1.0);
-	Sphere hollow(Vec3(-1, 0, -1), 0.4, Vec3(1, 1, 1), Material::Glass, 0, 1.0 / 1.5);
-
+	
 
 	std::vector<Sphere>spheres;
 
-	spheres.push_back(ball);
 	spheres.push_back(ground);
-	spheres.push_back(left);
-	spheres.push_back(right);
-	spheres.push_back(hollow);
+	spheres.push_back(glass);
+	spheres.push_back(metal);
+	spheres.push_back(brown);
+
+
+	for (int i = -11; i <= 10; i++)
+	{
+		for (int j = -11; j <= 10; j++)
+		{
+			double choose = randomDouble();
+			Vec3 ballCenter = Vec3(i + 0.9 * randomDouble(), 0.2, j + 0.9 * randomDouble());
+			bool tooClose = (ballCenter - Vec3(4, 0.2, 0)).length() <= 0.9;
+
+			if (!tooClose)
+			{
+				if (choose < 0.8)
+				{
+					Vec3 albedo = Vec3(randomDouble(), randomDouble(), randomDouble()) * Vec3(randomDouble(), randomDouble(), randomDouble());
+					Sphere ball(ballCenter, 0.2, albedo, Material::Diffuse, 0, 1);
+					spheres.push_back(ball);
+				}
+				else if (choose < 0.95)
+				{
+					Sphere ball(ballCenter, 0.2, Vec3(0.5 + 0.5 * randomDouble(), 0.5 + 0.5 * randomDouble(), 0.5 + 0.5 * randomDouble()), Material::Metal, 0.5 * randomDouble(), 0);
+					spheres.push_back(ball);
+				}
+				else
+				{
+					Sphere ball(ballCenter, 0.2, Vec3(1,1,1), Material::Glass, 0, 1.5);
+					spheres.push_back(ball);
+				}
+			}
+		}
+	}
 
 
 	if (!initialize(state))
