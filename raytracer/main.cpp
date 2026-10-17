@@ -7,17 +7,7 @@
 #include <algorithm>
 #include <cmath>
 #include <numbers>
-
-// Your ray tracer starts here.
-//
-// Plan:
-//   1. Set up SDL: window + renderer (you can reuse initialize/cleanup from your game)
-//   2. Make a std::vector<uint32_t> of pixels and a streaming texture
-//   3. Fill the pixels with the red/green gradient
-//   4. Each frame: SDL_UpdateTexture, SDL_RenderTexture, SDL_RenderPresent
-
-
-
+#include <thread>
 
 struct SDLState
 {
@@ -27,6 +17,36 @@ struct SDLState
 	int width, height; 
 };
 
+struct Camera
+{
+	Vec3 lookFrom = Vec3(13, 2, 3);
+	Vec3 lookAt = Vec3(0, 0, 0);
+	Vec3 vup = Vec3(0, 1, 0);
+	double defocusAngle = 0.6;
+	double focusDist = 10;
+	double vfov = 20;
+	double viewportHeight = 0;
+	double viewportWidth = 0;
+	Vec3 u, v, w;
+	Vec3 defocusDiskU, defocusDiskV;
+
+
+
+	void update(double aspectRatio)
+	{
+	double h = std::tan(vfov * 2 * std::numbers::pi / 360 / 2);
+	viewportHeight = 2.0 * h * focusDist;
+	viewportWidth = viewportHeight * aspectRatio;
+
+	w = unitVector(lookFrom - lookAt);
+	u = unitVector(cross(vup, w));
+	v = cross(w, u);
+
+	double defocusRadius = focusDist * tan(defocusAngle * 2 * std::numbers::pi / 360 / 2);
+	defocusDiskU = u * defocusRadius;
+	defocusDiskV = v * defocusRadius;
+	}
+};
 enum class Material
 {
 	Diffuse, Metal, Glass
@@ -55,7 +75,7 @@ Vec3 randomVec3();
 Vec3 randomUnitVector();
 double reflectance(const double cosine, const double refractionIndex);
 Vec3 randomUnitDisk();
-
+void renderRows(int startRow, int endRow, const SDLState& state, const std::vector<Sphere>& spheres, const int samples, const Camera& cam, std::vector<uint32_t>& pixels);
 
 
 int main(int argc, char* argv[])
@@ -65,27 +85,12 @@ int main(int argc, char* argv[])
 	state.width = 640;
 	state.height = 420;
 	bool running = true;
+	Camera cam;
+	cam.update(static_cast<double>(state.width) / state.height);
 
 	std::vector<uint32_t> pixels(state.width * state.height);
 
-	Vec3 lookFrom = Vec3(13,2,3);
-	Vec3 lookAt = Vec3(0, 0, 0);
-	Vec3 vup = Vec3(0, 1, 0);
-	double defocusAngle = 0.6;
-	double focusDist = 10;
-
-	double defocusRadius = focusDist * tan(defocusAngle * 2 * std::numbers::pi / 360 / 2);
-	const double vfov = 20;
-	double h = std::tan(vfov * 2 * std::numbers::pi / 360 / 2);
-	double viewportHeight = 2.0 * h * focusDist;
-	double viewportWidth = viewportHeight * static_cast<double>(state.width) / state.height;
-
-	Vec3 w = unitVector(lookFrom - lookAt);
-	Vec3 u = unitVector(cross(vup, w));
-	Vec3 v = cross(w, u);
-
-	Vec3 defocusDiskU = u * defocusRadius;
-	Vec3 defocusDiskV = v * defocusRadius;
+	
 
 
 	Vec3 center = Vec3(0, 0, -1);
@@ -99,7 +104,7 @@ int main(int argc, char* argv[])
 	Sphere metal(Vec3(4, 1, 0), 1, Vec3(0.7, 0.6, 0.5), Material::Metal, 0, 1.0);
 	Sphere brown(Vec3(-4, 1, 0), 1, Vec3(0.4, 0.2, 0.1), Material::Diffuse, 0, 1.0 / 1.5);
 
-	
+	int samples = 10;
 
 	std::vector<Sphere>spheres;
 
@@ -147,52 +152,7 @@ int main(int argc, char* argv[])
 	}
 
 	// looping through pixels
-	int samples = 10;
-	Vec3 origin;
-	for (int j = 0; j < state.height; j++)
-	{
-		for (int i = 0; i < state.width; i++)
-		{
-			Vec3 total(0, 0, 0);
-
-			for (int s = 0; s < samples; s++)
-			{
-
-				double fractionX = static_cast<double>(i + randomDouble()) / (state.width);
-
-				double fractionY = static_cast<double>(j + randomDouble()) / (state.height);
-
-				double x = (fractionX - 0.5) * viewportWidth;
-				double y = (0.5 - fractionY) * viewportHeight;
-
-				Vec3 pixelPoint = lookFrom + x * u + y * v - focusDist * w;
-				Vec3 p = randomUnitDisk();
-				if (defocusAngle <= 0)
-				{
-					origin = lookFrom;
-				}
-				else
-				{
-					origin = lookFrom + p.x * defocusDiskU + p.y * defocusDiskV;
-				}
-
-				Vec3 direction = pixelPoint - origin;
-				Ray r(origin, direction);
-
-				Vec3 color = rayColor(r, spheres, 10);
-				total = total + color;
-			}
-			
-			Vec3 average = total * (1.0 / samples);
-
-			pixels[j * state.width + i] = toPixel(average);
-
-
-
-
-		
-		}
-	}
+	renderRows(0, state.height, state, spheres, samples, cam, pixels);
 
 	while (running) 
 	{
@@ -430,4 +390,49 @@ double reflectance(const double cosine, const double refractionIndex)
 	double r0 = (1 - refractionIndex) / (1 + refractionIndex);
 	r0 = r0 * r0;
 	return (r0 + (1 - r0) * std::pow(1 - cosine, 5));
+}
+
+void renderRows(int startRow, int endRow, const SDLState& state, const std::vector<Sphere>& spheres, const int samples, const Camera& cam, std::vector<uint32_t>& pixels)
+{
+	Vec3 origin;
+	for (int j = startRow; j < endRow; j++) {
+		for (int i = 0; i < state.width; i++)
+		{
+			Vec3 total(0, 0, 0);
+
+			for (int s = 0; s < samples; s++)
+			{
+
+				double fractionX = static_cast<double>(i + randomDouble()) / (state.width);
+
+				double fractionY = static_cast<double>(j + randomDouble()) / (state.height);
+
+				double x = (fractionX - 0.5) * cam.viewportWidth;
+				double y = (0.5 - fractionY) * cam.viewportHeight;
+
+				Vec3 pixelPoint = cam.lookFrom + x * cam.u + y * cam.v - cam.focusDist * cam.w;
+				Vec3 p = randomUnitDisk();
+				if (cam.defocusAngle <= 0)
+				{
+					origin = cam.lookFrom;
+				}
+				else
+				{
+					origin = cam.lookFrom + p.x * cam.defocusDiskU + p.y * cam.defocusDiskV;
+				}
+
+				Vec3 direction = pixelPoint - origin;
+				Ray r(origin, direction);
+
+				Vec3 color = rayColor(r, spheres, 10);
+				total = total + color;
+			}
+
+			Vec3 average = total * (1.0 / samples);
+
+			pixels[j * state.width + i] = toPixel(average);
+
+		}
+	}
+
 }
