@@ -54,6 +54,7 @@ double randomDouble();
 Vec3 randomVec3();
 Vec3 randomUnitVector();
 double reflectance(const double cosine, const double refractionIndex);
+Vec3 randomUnitDisk();
 
 
 
@@ -70,15 +71,22 @@ int main(int argc, char* argv[])
 	Vec3 lookFrom = Vec3(-2,2,1);
 	Vec3 lookAt = Vec3(0, 0, -1);
 	Vec3 vup = Vec3(0, 1, 0);
+	double defocusAngle = 10.0;
+	double focusDist = 3.4;
+
+	double defocusRadius = focusDist * tan(defocusAngle * 2 * std::numbers::pi / 360);
 	double focalLength = lookFrom.length() - lookAt.length();
-	const double vfov = 90;
-	double vfov_in_radians = vfov * 2 * std::numbers::pi / 360;
-	double h = std::tan(vfov_in_radians / 2);
-	double viewportHeight = 2.0 * h * focalLength;
+	const double vfov = 20;
+	double h = std::tan(vfov * 2 * std::numbers::pi / 360 / 2);
+	double viewportHeight = 2.0 * h * focusDist;
 	double viewportWidth = viewportHeight * static_cast<double>(state.width) / state.height;
+
 	Vec3 w = unitVector(lookFrom - lookAt);
 	Vec3 u = unitVector(cross(vup, w));
 	Vec3 v = cross(w, u);
+
+	Vec3 defocusDiskU = u * defocusRadius;
+	Vec3 defocusDiskV = v * defocusRadius;
 
 
 	Vec3 center = Vec3(0, 0, -1);
@@ -113,6 +121,7 @@ int main(int argc, char* argv[])
 
 	// looping through pixels
 	int samples = 10;
+	Vec3 origin;
 	for (int j = 0; j < state.height; j++)
 	{
 		for (int i = 0; i < state.width; i++)
@@ -129,8 +138,19 @@ int main(int argc, char* argv[])
 				double x = (fractionX - 0.5) * viewportWidth;
 				double y = (0.5 - fractionY) * viewportHeight;
 
-				Vec3 direction = x * u + y * v - focalLength * w;
-				Ray r(lookFrom, direction);
+				Vec3 pixelPoint = lookFrom + x * u + y * v - focusDist * w;
+				Vec3 p = randomUnitDisk();
+				if (defocusAngle <= 0)
+				{
+					origin = lookFrom;
+				}
+				else
+				{
+					origin = lookFrom + p.x * defocusDiskU + p.y * defocusDiskV;
+				}
+
+				Vec3 direction = pixelPoint - origin;
+				Ray r(origin, direction);
 
 				Vec3 color = rayColor(r, spheres, 10);
 				total = total + color;
@@ -364,6 +384,18 @@ Vec3 randomUnitVector()
 	} while (dot(p, p) > 1 || dot(p,p) < 1e-160);
 
 	return unitVector(p);
+}
+
+Vec3 randomUnitDisk()
+{
+	Vec3 p;
+	do
+	{
+		p = Vec3(2 * randomDouble() - 1, 2 * randomDouble() - 1, 0);
+
+	} while (dot(p, p) > 1);
+
+	return p;
 }
 
 double reflectance(const double cosine, const double refractionIndex)
