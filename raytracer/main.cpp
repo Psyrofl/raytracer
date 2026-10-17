@@ -388,8 +388,7 @@ double hitSphere(const Sphere& sphere, const Ray& r)
 double randomDouble()
 {
 	thread_local std::uniform_real_distribution<double>  dist(0.0, 1.0);
-	thread_local std::mt19937 generator;
-	double x =   dist(generator);
+	thread_local std::mt19937 generator(std::random_device{}());	double x =   dist(generator);
 	return x;
 }
 
