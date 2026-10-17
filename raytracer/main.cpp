@@ -79,6 +79,7 @@ int main(int argc, char* argv[])
 	Sphere ground(groundVector, 100, groundColor, Material::Diffuse, 0, 1.0);
 	Sphere left(Vec3(-1, 0, -1), 0.5, Vec3(1, 1, 1), Material::Glass, 0, 1.5);
 	Sphere right(Vec3(1, 0, -1), 0.5, Vec3(0.8, 0.6, 0.2), Material::Metal, 1, 1.0);
+	Sphere hollow(Vec3(-1, 0, -1), 0.4, Vec3(1, 1, 1), Material::Glass, 0, 1.0 / 1.5);
 
 
 	std::vector<Sphere>spheres;
@@ -87,6 +88,7 @@ int main(int argc, char* argv[])
 	spheres.push_back(ground);
 	spheres.push_back(left);
 	spheres.push_back(right);
+	spheres.push_back(hollow);
 
 
 	if (!initialize(state))
