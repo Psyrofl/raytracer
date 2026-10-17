@@ -60,3 +60,11 @@ inline Vec3 reflect(const Vec3& v, const Vec3& n)
 {
 	return v - 2 * dot(v, n) * n;
 }
+
+inline Vec3 refract(const Vec3& uv, const Vec3& n, const double ratio)
+{
+	double cosTheta = std::fmin(dot(-1.0 * uv, n), 1.0);
+	Vec3 perp = ratio * (uv + cosTheta * n);
+	Vec3 parallel = -1.0 * std::sqrt(std::fabs(1.0 - dot(perp, perp))) * n;
+	return perp + parallel;
+}
