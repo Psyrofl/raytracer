@@ -69,3 +69,8 @@ inline Vec3 refract(const Vec3& uv, const Vec3& n, const double ratio)
 	return perp + parallel;
 }
 
+inline Vec3 cross(const Vec3& u, const Vec3& v)
+{
+	return Vec3(u.y * v.z - u.z * v.y, u.z * v.x - u.x * v.z, u.x * v.y - u.y * v.x);
+}
+

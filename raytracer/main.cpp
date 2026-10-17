@@ -5,6 +5,8 @@
 #include <limits>
 #include <random>
 #include <algorithm>
+#include <cmath>
+#include <numbers>
 
 // Your ray tracer starts here.
 //
@@ -65,14 +67,26 @@ int main(int argc, char* argv[])
 
 	std::vector<uint32_t> pixels(state.width * state.height);
 
-	Vec3 camera;
+	Vec3 lookFrom = Vec3(-2,2,1);
+	Vec3 lookAt = Vec3(0, 0, -1);
+	Vec3 vup = Vec3(0, 1, 0);
+	double focalLength = lookFrom.length() - lookAt.length();
+	const double vfov = 90;
+	double vfov_in_radians = vfov * 2 * std::numbers::pi / 360;
+	double h = std::tan(vfov_in_radians / 2);
+	double viewportHeight = 2.0 * h * focalLength;
+	double viewportWidth = viewportHeight * static_cast<double>(state.width) / state.height;
+	Vec3 w = unitVector(lookFrom - lookAt);
+	Vec3 u = unitVector(cross(vup, w));
+	Vec3 v = cross(w, u);
+
+
 	Vec3 center = Vec3(0, 0, -1);
 	Vec3 groundVector = Vec3(0, -100.5, -1);
 	Vec3 ballColor = Vec3(0.1, 0.2, 0.5);
 	Vec3 groundColor = Vec3(0.8, 0.8, 0.0);
 
-	double viewportHeight = 2.0;	
-	double viewportWidth = viewportHeight * static_cast<double>(state.width) / state.height;
+
 
 
 	Sphere ball(center, 0.5, ballColor, Material::Diffuse, 0, 1.0);
@@ -115,8 +129,8 @@ int main(int argc, char* argv[])
 				double x = (fractionX - 0.5) * viewportWidth;
 				double y = (0.5 - fractionY) * viewportHeight;
 
-				Vec3 direction(x, y, -1.0);
-				Ray r(camera, direction);
+				Vec3 direction = x * u + y * v - focalLength * w;
+				Ray r(lookFrom, direction);
 
 				Vec3 color = rayColor(r, spheres, 10);
 				total = total + color;
