@@ -8,6 +8,7 @@
 #include <cmath>
 #include <numbers>
 #include <thread>
+#include <functional>
 
 struct SDLState
 {
@@ -152,7 +153,31 @@ int main(int argc, char* argv[])
 	}
 
 	// looping through pixels
-	renderRows(0, state.height, state, spheres, samples, cam, pixels);
+	int numThreads = std::thread::hardware_concurrency();
+	if (numThreads <= 0)
+	{
+		numThreads = 1;
+	}
+	int rowsPerThread = state.height / numThreads;
+
+	std::vector<std::thread> threads;
+
+	for (int t = 0; t < numThreads; t++)
+	{
+		int start = t * rowsPerThread;
+		int end = (t + 1) * rowsPerThread;
+		if (t == numThreads - 1)
+		{
+			end = state.height;
+		}
+		threads.push_back(std::thread(renderRows, start, end, std::cref(state), std::cref(spheres), samples, std::cref(cam), std::ref(pixels)));
+
+	}
+
+	for (std::thread& t : threads)
+	{
+		t.join();
+	}
 
 	while (running) 
 	{
@@ -350,8 +375,8 @@ double hitSphere(const Sphere& sphere, const Ray& r)
 
 double randomDouble()
 {
-	static std::uniform_real_distribution<double>  dist(0.0, 1.0);
-	static std::mt19937 generator;
+	thread_local std::uniform_real_distribution<double>  dist(0.0, 1.0);
+	thread_local std::mt19937 generator;
 	double x =   dist(generator);
 	return x;
 }
