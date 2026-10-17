@@ -68,3 +68,4 @@ inline Vec3 refract(const Vec3& uv, const Vec3& n, const double ratio)
 	Vec3 parallel = -1.0 * std::sqrt(std::fabs(1.0 - dot(perp, perp))) * n;
 	return perp + parallel;
 }
+

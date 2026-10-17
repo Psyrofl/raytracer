@@ -51,6 +51,8 @@ double hitSphere(const Sphere& sphere, const Ray& r);
 double randomDouble();
 Vec3 randomVec3();
 Vec3 randomUnitVector();
+double reflectance(const double cosine, const double refractionIndex);
+
 
 
 int main(int argc, char* argv[])
@@ -75,7 +77,7 @@ int main(int argc, char* argv[])
 
 	Sphere ball(center, 0.5, ballColor, Material::Diffuse, 0, 1.0);
 	Sphere ground(groundVector, 100, groundColor, Material::Diffuse, 0, 1.0);
-	Sphere left(Vec3(-1, 0, -1), 0.5, Vec3(0.8, 0.8, 0.8), Material::Glass, 0, 1.5);
+	Sphere left(Vec3(-1, 0, -1), 0.5, Vec3(1, 1, 1), Material::Glass, 0, 1.5);
 	Sphere right(Vec3(1, 0, -1), 0.5, Vec3(0.8, 0.6, 0.2), Material::Metal, 1, 1.0);
 
 
@@ -254,7 +256,18 @@ Vec3 rayColor(const Ray& r, const std::vector<Sphere> &spheres, int depth)
 			}
 			
 			Vec3 unitDir = unitVector(r.direction);
-			newDir = refract(unitDir, normal, ratio);
+			double cosTheta = std::fmin(dot(-1.0 * unitDir, normal), 1.0);
+			double sinTheta = std::sqrt(1.0 - cosTheta * cosTheta);
+			bool cannotRefract = ratio * sinTheta > 1.0;
+			if (cannotRefract || reflectance(cosTheta, ratio) > randomDouble())
+			{
+				newDir = reflect(unitDir, normal);
+			}
+
+			else
+			{
+				newDir = refract(unitDir, normal, ratio);
+			}
 		}
 
 		else
@@ -335,4 +348,11 @@ Vec3 randomUnitVector()
 	} while (dot(p, p) > 1 || dot(p,p) < 1e-160);
 
 	return unitVector(p);
+}
+
+double reflectance(const double cosine, const double refractionIndex)
+{
+	double r0 = (1 - refractionIndex) / (1 + refractionIndex);
+	r0 = r0 * r0;
+	return (r0 + (1 - r0) * std::pow(1 - cosine, 5));
 }
