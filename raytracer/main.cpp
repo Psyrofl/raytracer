@@ -87,7 +87,9 @@ int main(int argc, char* argv[])
 	state.height = 420;
 	bool running = true;
 	Camera cam;
-	cam.update(static_cast<double>(state.width) / state.height);
+	double aspectRatio = static_cast<double>(state.width) / state.height;
+	cam.update(aspectRatio);
+	double speed = 5.0;
 
 	std::vector<uint32_t> pixels(state.width * state.height);
 
@@ -152,9 +154,10 @@ int main(int argc, char* argv[])
 	}
 
 	int sampleCount = 0;
+	const int maxSamples = 500;
 	std::vector<Vec3> accum(state.width * state.height);
 
-
+	uint64_t prevTime = SDL_GetTicks();
 	 
 	while (running) 
 	{
@@ -174,32 +177,96 @@ int main(int argc, char* argv[])
 		}
 		int rowsPerThread = state.height / numThreads;
 
-		std::vector<std::thread> threads;
+		uint64_t nowTime = SDL_GetTicks();
+		float deltaTime = ((nowTime - prevTime)/1000.0f);
+		prevTime = nowTime;
 
-		for (int t = 0; t < numThreads; t++)
+		const bool* keys = SDL_GetKeyboardState(nullptr);
+		Vec3 move(0, 0, 0);
+
+		if (keys[SDL_SCANCODE_W])
 		{
-			int start = t * rowsPerThread;
-			int end = (t + 1) * rowsPerThread;
-			if (t == numThreads - 1)
+			move = move + (- 1.0 * cam.w);
+		}
+
+		if (keys[SDL_SCANCODE_S])
+		{
+			move = move + cam.w;
+		}
+
+		if (keys[SDL_SCANCODE_A])
+		{
+			move = move + (-1.0 * cam.u);
+		}
+
+		if (keys[SDL_SCANCODE_D])
+		{
+			move = move + cam.u;
+		}
+
+		if (keys[SDL_SCANCODE_Q])
+		{
+			move = move + (-1.0 * cam.v);
+		}
+
+		if (keys[SDL_SCANCODE_E])
+		{
+			move = move + cam.v;
+		}
+
+
+		if (dot(move, move) > 0)
+		{
+			move = move * (speed * deltaTime);
+
+			cam.lookFrom = cam.lookFrom + move;
+			cam.lookAt = cam.lookAt + move;
+			cam.update(aspectRatio);
+
+
+			std::fill(accum.begin(), accum.end(), Vec3(0, 0, 0));
+			sampleCount = 0;
+		}
+
+
+		if (sampleCount < maxSamples)
+		{
+			std::vector<std::thread> threads;
+
+			for (int t = 0; t < numThreads; t++)
 			{
-				end = state.height;
+				int start = t * rowsPerThread;
+				int end = (t + 1) * rowsPerThread;
+				if (t == numThreads - 1)
+				{
+					end = state.height;
+				}
+
+				threads.push_back(std::thread(renderRows, start, end, std::cref(state), std::cref(spheres), std::ref(accum), std::cref(cam), std::ref(pixels)));
+
 			}
-			threads.push_back(std::thread(renderRows, start, end, std::cref(state), std::cref(spheres), std::ref(accum), std::cref(cam), std::ref(pixels)));
 
+			for (std::thread& t : threads)
+			{
+				t.join();
+			}
+
+
+			sampleCount++;
+
+			for (int k = 0; k < (int)accum.size(); k++)
+			{
+				pixels[k] = toPixel(accum[k] * (1.0 / sampleCount));
+			}
+			
 		}
 
-		for (std::thread& t : threads)
+		else
 		{
-			t.join();
+			SDL_Delay(16);
 		}
 
-
-		sampleCount++;
-
-		for (int k = 0; k < (int)accum.size(); k++)
-		{
-			pixels[k] = toPixel(accum[k] * (1.0 / sampleCount));
-		}
+		
 
 		SDL_UpdateTexture(state.tex, nullptr, pixels.data(), state.width * sizeof(uint32_t));
 		SDL_RenderTexture(state.render, state.tex, nullptr, nullptr);
