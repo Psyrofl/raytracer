@@ -159,6 +159,10 @@ int main(int argc, char* argv[])
 
 	uint64_t prevTime = SDL_GetTicks();
 	 
+	Vec3 d = unitVector(cam.lookAt - cam.lookFrom);
+	double yaw = std::atan2(d.x, d.z);
+	double pitch = std::asin(d.y);
+
 	while (running) 
 	{
 		bool cameraChanged = false;
@@ -178,7 +182,6 @@ int main(int argc, char* argv[])
 			}
 		}
 
-		// looping through pixels
 		int numThreads = std::thread::hardware_concurrency();
 		if (numThreads <= 0)
 		{
@@ -223,18 +226,50 @@ int main(int argc, char* argv[])
 			move = move + cam.v;
 		}
 
+		double turnSpeed = 1.5;
+
+		if (keys[SDL_SCANCODE_LEFT])
+		{
+			yaw = yaw + turnSpeed * deltaTime;
+			cameraChanged = true;
+		}
+
+		if (keys[SDL_SCANCODE_RIGHT])
+		{
+			yaw = yaw - turnSpeed * deltaTime;
+			cameraChanged = true;
+
+		}
+
+		if (keys[SDL_SCANCODE_UP])
+		{
+			pitch = pitch + turnSpeed * deltaTime;
+			cameraChanged = true;
+
+		}
+
+		if (keys[SDL_SCANCODE_DOWN])
+		{
+			pitch = pitch - turnSpeed * deltaTime;
+			cameraChanged = true;
+		}
+
+		pitch = std::clamp(pitch, -1.5, 1.5); 
+
+
 
 		if (dot(move, move) > 0)
 		{
 			move = move * (speed * deltaTime);
 
 			cam.lookFrom = cam.lookFrom + move;
-			cam.lookAt = cam.lookAt + move;
 			cameraChanged = true;
 		}
 
 		if (cameraChanged)
 		{
+			Vec3 forward = Vec3(std::cos(pitch) * std::sin(yaw), std::sin(pitch), std::cos(pitch) * std::cos(yaw));
+			cam.lookAt = cam.lookFrom + forward * cam.focusDist;
 			cam.update(aspectRatio);
 			std::fill(accum.begin(), accum.end(), Vec3(0, 0, 0));
 			sampleCount = 0;
