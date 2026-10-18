@@ -161,11 +161,20 @@ int main(int argc, char* argv[])
 	 
 	while (running) 
 	{
+		bool cameraChanged = false;
+
 		while (SDL_PollEvent(&event))
 		{
 			if (event.type == SDL_EVENT_QUIT)
 			{
 				running = false;
+			}
+
+			if (event.type == SDL_EVENT_MOUSE_WHEEL)
+			{
+				cam.vfov = cam.vfov - event.wheel.y * 2.0;
+				cam.vfov = std::clamp(cam.vfov, 1.0, 120.0);
+				cameraChanged = true;
 			}
 		}
 
@@ -221,9 +230,12 @@ int main(int argc, char* argv[])
 
 			cam.lookFrom = cam.lookFrom + move;
 			cam.lookAt = cam.lookAt + move;
+			cameraChanged = true;
+		}
+
+		if (cameraChanged)
+		{
 			cam.update(aspectRatio);
-
-
 			std::fill(accum.begin(), accum.end(), Vec3(0, 0, 0));
 			sampleCount = 0;
 		}
