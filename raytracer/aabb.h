@@ -2,6 +2,7 @@
 #include <algorithm>
 #include "vec3.h"
 #include "ray.h"
+#include <limits>
 
 class AABB 
 {
@@ -22,6 +23,29 @@ public:
 
     }
 
+    AABB(const AABB& box1, const AABB& box2) : min(box1.min), max(box2.max)
+    {
+        min.x = std::min(box1.min.x, box2.min.x);
+        min.y = std::min(box1.min.y, box2.min.y);
+        min.z = std::min(box1.min.z, box2.min.z);
+
+        max.x = std::max(box1.max.x, box2.max.x);
+        max.y = std::max(box1.max.y, box2.max.y);
+        max.z = std::max(box1.max.z, box2.max.z);
+    }
+
+    AABB() 
+    {
+        min.x = std::numeric_limits<double>::infinity();
+        max.x = -1.0 * (std::numeric_limits<double>::infinity());
+
+        min.y = std::numeric_limits<double>::infinity();
+        max.y = -1.0 * (std::numeric_limits<double>::infinity());
+
+        min.z = std::numeric_limits<double>::infinity();
+        max.z = -1.0 * (std::numeric_limits<double>::infinity());
+    };
+    
     bool hit(const Ray& r, double tmin, double tmax) const
     {
         double t0 = (min.x - r.origin.x) / r.direction.x;

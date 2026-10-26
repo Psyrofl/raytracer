@@ -2,6 +2,7 @@
 #include "vec3.h"
 #include "ray.h"
 #include <memory>
+#include "aabb.h"
 
 class Material;
 
@@ -35,5 +36,5 @@ class Hittable
 public:
 	virtual bool hit(const Ray& r, double tMin, double tMax, HitRecord& rec) const = 0;
 	virtual ~Hittable() = default;
-	
+	virtual AABB boundingBox() const = 0;
 };

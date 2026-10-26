@@ -7,9 +7,43 @@ public:
 	Ray center;
 	double radius;
 	std::shared_ptr<Material> mat;
+	AABB bbox;
 
-	Sphere(const Vec3& staticCenter, double radius, std::shared_ptr<Material> mat) : center(staticCenter, Vec3(0,0,0)), radius(radius), mat(mat) {}
-	Sphere(const Vec3& center1, const Vec3& center2, double radius, std::shared_ptr<Material> mat) : center(center1, center2 - center1), radius(radius), mat(mat) {}
+	Sphere(const Vec3& staticCenter, double radius, std::shared_ptr<Material> mat) 
+	: center(staticCenter, Vec3(0,0,0)), radius(radius), mat(mat) 
+	{
+		Vec3 rvec(radius,radius,radius);
+		Vec3 minstart = center.at(0) - rvec;
+		Vec3 maxstart = center.at(0) + rvec;
+
+		AABB startbox = AABB(minstart,maxstart);
+
+		Vec3 minend = center.at(1) - rvec;
+		Vec3 maxend = center.at(1) + rvec;
+
+		AABB endbox = AABB(minend, maxend);
+
+		bbox = AABB(startbox, endbox);
+	}
+
+	Sphere(const Vec3& center1, const Vec3& center2, double radius, std::shared_ptr<Material> mat) 
+	: center(center1, center2 - center1), radius(radius), mat(mat) 
+	{
+		{
+		Vec3 rvec(radius,radius,radius);
+		Vec3 minstart = center.at(0) - rvec;
+		Vec3 maxstart = center.at(0) + rvec;
+
+		AABB startbox = AABB(minstart,maxstart);
+
+		Vec3 minend = center.at(1) - rvec;
+		Vec3 maxend = center.at(1) + rvec;
+
+		AABB endbox = AABB(minend, maxend);
+
+		bbox = AABB(startbox, endbox);
+	}
+	}
 
 
 	bool hit(const Ray& r, double tMin, double tMax, HitRecord& rec) const override
@@ -55,5 +89,10 @@ public:
 		rec.setFaceNormal(r, outward);
 		rec.mat = mat;
 		return true;
+	}
+
+	AABB boundingBox() const override
+	{
+		return bbox;
 	}
 };
