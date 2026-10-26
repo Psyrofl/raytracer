@@ -11,6 +11,8 @@ struct HitRecord
 	Vec3 point;
 	Vec3 normal;
 	double t = 0;
+	double u = 0;
+	double v = 0;
 	bool frontFace = false;
 	std::shared_ptr<Material> mat;
 

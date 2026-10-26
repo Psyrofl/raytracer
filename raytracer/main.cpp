@@ -16,6 +16,7 @@
 #include "hittable_list.h"
 #include "material.h"
 #include "bvh.h"
+#include "texture.h"
 
 
 struct SDLState
@@ -80,8 +81,9 @@ int main(int argc, char* argv[])
 
 	HittableList world;
 
+	auto groundColor = std::make_shared<CheckerColor>(Vec3(0.2, 0.3, 0.1), Vec3(0.9, 0.9, 0.9), 0.32);
 
-	auto groundMat = std::make_shared<Lambertian>(Vec3(0.5, 0.5, 0.5));
+	auto groundMat = std::make_shared<Lambertian>(groundColor);
 	auto glassMat = std::make_shared<Dielectric>(1.5);
 	auto metalMat = std::make_shared<Metal>(Vec3(0.7, 0.6, 0.5), 0);
 	auto brownMat = std::make_shared<Lambertian>(Vec3(0.4, 0.2, 0.1));
