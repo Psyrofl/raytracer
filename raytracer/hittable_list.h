@@ -13,7 +13,7 @@ public:
 	void add(std::shared_ptr<Hittable> object)
 	{
 		objects.push_back(object);
-		bbox = AABB(bbox, object -> boundingBox());
+		bbox = AABB(bbox, object -> boundingBox());	
 	}
 
 	bool hit(const Ray& r, double tMin, double tMax, HitRecord& rec) const override
@@ -38,4 +38,11 @@ public:
 	{
 		return bbox;
 	}
+
+	HittableList(std::shared_ptr<Hittable> object)
+	{
+		add(object);
+	}
+
+	HittableList() {}
 };

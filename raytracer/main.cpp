@@ -15,6 +15,7 @@
 #include "sphere.h"
 #include "hittable_list.h"
 #include "material.h"
+#include "bvh.h"
 
 
 struct SDLState
@@ -79,6 +80,7 @@ int main(int argc, char* argv[])
 
 	HittableList world;
 
+
 	auto groundMat = std::make_shared<Lambertian>(Vec3(0.5, 0.5, 0.5));
 	auto glassMat = std::make_shared<Dielectric>(1.5);
 	auto metalMat = std::make_shared<Metal>(Vec3(0.7, 0.6, 0.5), 0);
@@ -122,6 +124,9 @@ int main(int argc, char* argv[])
 			}
 		}
 	}
+
+	world = HittableList(std::make_shared<BVHNode>(world));
+
 
 
 	if (!initialize(state))
