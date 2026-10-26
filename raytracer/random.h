@@ -1,4 +1,7 @@
 #pragma once
+#include <random>
+#include <cmath>
+#include "vec3.h"
 
 inline double randomDouble()
 {

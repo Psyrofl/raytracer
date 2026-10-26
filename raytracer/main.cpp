@@ -60,8 +60,7 @@ struct Camera
 bool initialize(SDLState &state);
 void cleanup(SDLState &state);
 uint32_t toPixel(const Vec3& color);
-Vec3 rayColor(const Ray& r, const std::vector<Sphere>& spheres, int depth);
-double hitSphere(const Sphere& sphere, const Ray& r);
+Vec3 rayColor(const Ray& r, const Hittable& world, int depth);
 void renderRows(int startRow, int endRow, const SDLState& state, const Hittable& world, std::vector<Vec3>& accum, const Camera& cam, std::vector<uint32_t>& pixels);
 
 
@@ -101,12 +100,14 @@ int main(int argc, char* argv[])
 			Vec3 ballCenter = Vec3(i + 0.9 * randomDouble(), 0.2, j + 0.9 * randomDouble());
 			bool tooClose = (ballCenter - Vec3(4, 0.2, 0)).length() <= 0.9;
 
+
 			if (!tooClose)
 			{
 				if (choose < 0.8)
 				{
 					auto randomMat = std::make_shared<Lambertian>(Vec3(randomDouble(), randomDouble(), randomDouble()) * Vec3(randomDouble(), randomDouble(), randomDouble()));
-					world.add(std::make_shared<Sphere>(ballCenter, 0.2, randomMat));
+					Vec3 center2 = ballCenter + Vec3(0, randomDouble() * 0.5, 0);
+					world.add(std::make_shared<Sphere>(ballCenter, center2, 0.2, randomMat));
 				}
 				else if (choose < 0.95)
 				{
@@ -411,7 +412,7 @@ void renderRows(int startRow, int endRow, const SDLState& state, const Hittable&
 			}
 
 			Vec3 direction = pixelPoint - origin;
-			Ray r(origin, direction);
+			Ray r(origin, direction, randomDouble());
 
 			Vec3 color = rayColor(r, world, 10);
 			accum[j * state.width + i] = accum[j * state.width + i] + color;

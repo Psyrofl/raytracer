@@ -20,7 +20,7 @@ public:
     bool scatter(const Ray& rIn, const HitRecord& rec, Vec3& attenuation, Ray& scattered) const override
     {
         Vec3 dir = rec.normal + randomUnitVector();
-        scattered = Ray(rec.point, dir);
+        scattered = Ray(rec.point, dir, rIn.time);
         attenuation = albedo;
         return true;
     }
@@ -41,7 +41,7 @@ public:
     {
        
         Vec3 dir = unitVector(reflect(rIn.direction, rec.normal)) + fuzz * randomUnitVector();
-        scattered = Ray(rec.point, dir);
+        scattered = Ray(rec.point, dir, rIn.time);
         attenuation = albedo;
 
         return (dot(dir, rec.normal) > 0);
@@ -85,7 +85,7 @@ public:
 			dir = refract(unitDir, rec.normal, ratio);
 		}
 
-			scattered = Ray(rec.point, dir);
+			scattered = Ray(rec.point, dir, rIn.time);
 			return true;
 	}	
 };

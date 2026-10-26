@@ -4,15 +4,18 @@
 class Sphere : public Hittable
 {
 public:
-	Vec3 center;
+	Ray center;
 	double radius;
 	std::shared_ptr<Material> mat;
 
-	Sphere(const Vec3& center, const double radius, std::shared_ptr<Material> mat) : center(center), radius(radius), mat(mat){}
+	Sphere(const Vec3& staticCenter, double radius, std::shared_ptr<Material> mat) : center(staticCenter, Vec3(0,0,0)), radius(radius), mat(mat) {}
+	Sphere(const Vec3& center1, const Vec3& center2, double radius, std::shared_ptr<Material> mat) : center(center1, center2 - center1), radius(radius), mat(mat) {}
+
 
 	bool hit(const Ray& r, double tMin, double tMax, HitRecord& rec) const override
 	{
-		Vec3 oc = center - r.origin;
+		Vec3 currentCenter = center.at(r.time);
+		Vec3 oc = currentCenter - r.origin;
 		double a = dot(r.direction, r.direction);
 		double b = -2.0 * dot(r.direction, oc);
 		double c = dot(oc, oc) - radius * radius;
@@ -48,7 +51,7 @@ public:
 		}
 
 		rec.point = r.at(rec.t);
-		outward = (rec.point - center) * (1.0 / radius);
+		outward = (rec.point - currentCenter) * (1.0 / radius);
 		rec.setFaceNormal(r, outward);
 		rec.mat = mat;
 		return true;
