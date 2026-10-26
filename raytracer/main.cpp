@@ -39,7 +39,6 @@ struct Camera
 	Vec3 defocusDiskU, defocusDiskV;
 
 
-
 	void update(double aspectRatio)
 	{
 	double h = std::tan(vfov * 2 * std::numbers::pi / 360 / 2);
