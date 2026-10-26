@@ -1,0 +1,75 @@
+#pragma once
+#include <algorithm>
+#include "vec3.h"
+#include "ray.h"
+
+class AABB 
+{
+public:
+    Vec3 min;
+    Vec3 max;
+    double tmin, tmax;
+
+    AABB(const Vec3& a, const Vec3& b) : min(a), max(b) 
+    {
+        min.x = std::min(a.x,b.x);
+        min.y = std::min(a.y,b.y);
+        min.z = std::min(a.z,b.z);
+
+        max.x = std::max(a.x,b.x);
+        max.y = std::max(a.y, b.y);
+        max.z = std::max(a.z, b.z);
+
+    }
+
+    bool hit(const Ray& r, double tmin, double tmax) const
+    {
+        double t0 = (min.x - r.origin.x) / r.direction.x;
+        double t1 = (max.x - r.origin.x) / r.direction.x; 
+
+        if (t0 > t1)
+        {
+            std::swap(t0,t1);
+        }
+        tmin = std::max(tmin, t0);
+        tmax = std::min(tmax, t1);
+
+        if (tmax <= tmin)
+        {
+            return false;
+        }
+        
+        double t2 = (min.y - r.origin.y) / r.direction.y;
+        double t3 = (max.y - r.origin.y) / r.direction.y; 
+
+        if (t2 > t3)
+        {
+            std::swap(t2,t3);
+        }
+        tmin = std::max(tmin, t2);
+        tmax = std::min(tmax, t3);
+
+        if (tmax <= tmin)
+        {
+            return false;
+        }
+
+        double t4 = (min.z - r.origin.z) / r.direction.z;
+        double t5 = (max.z - r.origin.z) / r.direction.z; 
+
+        if (t4 > t5)
+        {
+            std::swap(t4,t5);
+        }
+        tmin = std::max(tmin, t4);
+        tmax = std::min(tmax, t5);
+
+        if (tmax <= tmin)
+        {
+            return false;
+        }
+        
+        return true;
+    }
+
+};

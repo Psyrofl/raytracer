@@ -1,3 +1,6 @@
 .vs/
 x64/
 *.vcxproj.user
+raytracer/game
+.DS_Store
+.claude/
