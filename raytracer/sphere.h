@@ -1,5 +1,7 @@
 #pragma once
 #include "hittable.h"
+#include <cmath>
+#include <numbers>
 
 class Sphere : public Hittable
 {
@@ -42,7 +44,15 @@ public:
 		AABB endbox = AABB(minend, maxend);
 
 		bbox = AABB(startbox, endbox);
+		}
 	}
+
+	static void getSphereUV(const Vec3& p, double& u, double& v)
+	{
+		double theta = std::acos(-p.y);
+		double phi = std::atan2(-p.z, p.x) + std::numbers::pi;
+		u = phi / (2 * std::numbers::pi);
+		v = theta / std::numbers::pi;
 	}
 
 
@@ -88,6 +98,7 @@ public:
 		outward = (rec.point - currentCenter) * (1.0 / radius);
 		rec.setFaceNormal(r, outward);
 		rec.mat = mat;
+		getSphereUV(outward, rec.u, rec.v);
 		return true;
 	}
 

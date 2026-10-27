@@ -9,7 +9,6 @@ class AABB
 public:
     Vec3 min;
     Vec3 max;
-    double tmin, tmax;
 
     AABB(const Vec3& a, const Vec3& b) : min(a), max(b) 
     {
