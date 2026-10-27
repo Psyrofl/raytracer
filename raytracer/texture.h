@@ -5,6 +5,7 @@
 #include <SDL3_image/SDL_image.h>
 #include <vector>
 #include <algorithm>
+#include "perlin.h"
 
 class Texture
 {
@@ -128,3 +129,17 @@ public:
     }
 };
 
+class NoiseTexture : public Texture
+{
+public: 
+    Perlin noise;
+    double scale;
+
+    NoiseTexture(const double scale): scale(scale) {}
+
+    Vec3 value(double u, double v, const Vec3& p) const override
+    {
+        return (Vec3(1,1,1) * 0.5 * (1.0 + noise.noise(scale * p)));
+    }
+
+};

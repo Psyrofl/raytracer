@@ -17,6 +17,7 @@
 #include "material.h"
 #include "bvh.h"
 #include "texture.h"
+#include "perlin.h"
 
 
 struct SDLState
@@ -89,12 +90,15 @@ int main(int argc, char* argv[])
 	auto brownMat = std::make_shared<Lambertian>(Vec3(0.4, 0.2, 0.1));
 	auto earthTex = std::make_shared<ImageTexture>("earthmap.jpg");
 	auto earthMat = std::make_shared<Lambertian>(earthTex);
+	auto perlinTex = std::make_shared<NoiseTexture>(4);
+	auto perlinMat = std::make_shared<Lambertian>(perlinTex);
 
 	world.add(std::make_shared<Sphere>(Vec3(0, 0, 0), 2, earthMat));
-	world.add(std::make_shared<Sphere>(Vec3(0, -1000, 0), 1000, groundMat));
+	world.add(std::make_shared<Sphere>(Vec3(0, -1000, 0), 1000, perlinMat));
 	world.add(std::make_shared<Sphere>(Vec3(0, 1, 0), 1.0, glassMat));
 	world.add(std::make_shared<Sphere>(Vec3(4, 1, 0), 1, metalMat));
 	world.add(std::make_shared<Sphere>(Vec3(-4, 1, 0), 1, brownMat));
+	world.add(std::make_shared<Sphere>(Vec3(0, 2, 0), 2, perlinMat));
 
 
 

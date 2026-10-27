@@ -2,6 +2,7 @@
 #include <utility>
 #include "vec3.h"
 #include "random.h"
+#include <cmath>
 
 class Perlin
 {
@@ -39,7 +40,34 @@ public:
 		generatePerm(permZ);
 	}
 
-	double noise(const Vec3& p)
+	static double perlinInterp(const Vec3 c[2][2][2], double u, double v, double w)
+	{
+		double uu = u * u * (3 - 2 * u);
+		double vv = v * v * (3 - 2 * v); 
+		double ww = w * w * (3 - 2 * w);
+		double total = 0.0;
+
+		for (int di = 0; di < 2; di++)
+		{
+			for (int dj = 0; dj < 2; dj++)
+			{
+				for (int dk = 0; dk < 2; dk++)
+				{
+					Vec3 offset = Vec3(u-di, v - dj, w -dk);
+					double weight = (di * uu + (1 - di) * (1 - uu))
+					* (dj * vv + (1 - dj) * (1 - vv))
+					* (dk * ww + (1 - dk) * (1 - ww));
+
+					total += weight * dot(c[di][dj][dk], offset);
+				}
+			}
+			
+		}	
+
+		return total;	
+	}
+
+	double noise(const Vec3& p) const
 	{
 		double u = p.x - std::floor(p.x);
 		double v = p.y - std::floor(p.y);
@@ -56,11 +84,14 @@ public:
 			{
 				for (int dk = 0; dk < 2; dk++)
 				{
-					c[di][dj][dk] = randvec[permX][permY][permZ];
+					c[di][dj][dk] =randvec[ permX[(i+di) & 255] ^ permY[(j+dj) & 255] ^ permZ[(k+dk) & 255] ];	
 				}
 			}
 			
 		}
+		return perlinInterp(c, u, v, w);
 	}
+
+	
 
 };
