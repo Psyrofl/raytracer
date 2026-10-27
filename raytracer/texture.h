@@ -139,7 +139,7 @@ public:
 
     Vec3 value(double u, double v, const Vec3& p) const override
     {
-        return (Vec3(1,1,1) * 0.5 * (1.0 + noise.turb(p,7)));
+        return Vec3(0.5, 0.5, 0.5) * (1 + std::sin(scale * p.z + 10 * noise.turb(p, 7)));
     }
 
 };
