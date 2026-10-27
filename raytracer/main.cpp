@@ -29,7 +29,7 @@ struct SDLState
 
 struct Camera
 {
-	Vec3 lookFrom = Vec3(13, 2, 3);
+	Vec3 lookFrom = Vec3(0,0,12);
 	Vec3 lookAt = Vec3(0, 0, 0);
 	Vec3 vup = Vec3(0, 1, 0);
 	double defocusAngle = 0.6;
@@ -87,7 +87,10 @@ int main(int argc, char* argv[])
 	auto glassMat = std::make_shared<Dielectric>(1.5);
 	auto metalMat = std::make_shared<Metal>(Vec3(0.7, 0.6, 0.5), 0);
 	auto brownMat = std::make_shared<Lambertian>(Vec3(0.4, 0.2, 0.1));
+	auto earthTex = std::make_shared<ImageTexture>("earthmap.jpg");
+	auto earthMat = std::make_shared<Lambertian>(earthTex);
 
+	world.add(std::make_shared<Sphere>(Vec3(0, 0, 0), 2, earthMat));
 	world.add(std::make_shared<Sphere>(Vec3(0, -1000, 0), 1000, groundMat));
 	world.add(std::make_shared<Sphere>(Vec3(0, 1, 0), 1.0, glassMat));
 	world.add(std::make_shared<Sphere>(Vec3(4, 1, 0), 1, metalMat));
