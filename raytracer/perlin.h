@@ -92,6 +92,21 @@ public:
 		return perlinInterp(c, u, v, w);
 	}
 
+	double turb(const Vec3& p, int depth = 7)const
+	{
+		double total = 0.0;
+		double weight = 1.0;
+		Vec3 tempP(p);
+
+		for (int i = 0; i < depth; i++)
+		{
+			total += weight * noise(tempP);
+			weight *= 0.5;
+			tempP = tempP * 2;
+		}
+		return std::fabs(total);
+	}
+
 	
 
 };
