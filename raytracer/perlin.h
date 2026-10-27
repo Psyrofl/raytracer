@@ -39,4 +39,28 @@ public:
 		generatePerm(permZ);
 	}
 
+	double noise(const Vec3& p)
+	{
+		double u = p.x - std::floor(p.x);
+		double v = p.y - std::floor(p.y);
+		double w = p.z - std::floor(p.z);
+
+		int i = int(std::floor(p.x));
+		int j = int(std::floor(p.y));
+		int k = int(std::floor(p.z));
+
+		Vec3 c[2][2][2];
+		for (int di = 0; di < 2; di++)
+		{
+			for (int dj = 0; dj < 2; dj++)
+			{
+				for (int dk = 0; dk < 2; dk++)
+				{
+					c[di][dj][dk] = randvec[permX][permY][permZ];
+				}
+			}
+			
+		}
+	}
+
 };
