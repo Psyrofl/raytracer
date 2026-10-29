@@ -67,6 +67,7 @@ void cleanup(SDLState &state);
 uint32_t toPixel(const Vec3& color);
 Vec3 rayColor(const Ray& r, const Hittable& world, int depth, const Camera& cam);
 void renderRows(int startRow, int endRow, int step, int depth, const SDLState& state, const Hittable& world, std::vector<Vec3>& accum, const Camera& cam, std::vector<uint32_t>& pixels, bool preview);
+Vec3 previewColor(const Ray& r, const Hittable& world, const Camera& cam);
 
 
 int main(int argc, char* argv[])
@@ -319,7 +320,7 @@ int main(int argc, char* argv[])
 		}
 
 		bool preview = cameraChanged;
-		int step  = preview ? 4 : 1;
+		int step  = preview ? 2 : 1;
 		int depth = preview ? 5 : 50;
 
 
@@ -432,8 +433,6 @@ Vec3 rayColor(const Ray& r, const Hittable& world, int depth, const Camera& cam)
 
 	HitRecord rec;
 
-
-
 	if (world.hit(r, 0.001, std::numeric_limits<double>::infinity(), rec))
 	{
 		Vec3 light = rec.mat->emitted(rec.u, rec.v, rec.point);
@@ -490,8 +489,7 @@ void renderRows(int startRow, int endRow, int step, int depth, const SDLState& s
 			Vec3 direction = pixelPoint - origin;
 			Ray r(origin, direction, randomDouble());
 
-			Vec3 color = rayColor(r, world, depth, cam);
-			
+			Vec3 color = preview ? previewColor(r, world, cam) : rayColor(r, world, depth, cam);			
 			if (preview)
 			{
 				uint32_t pixel = toPixel(color);
@@ -511,5 +509,39 @@ void renderRows(int startRow, int endRow, int step, int depth, const SDLState& s
 
 		}
 	}
+}
 
+Vec3 previewColor(const Ray& r, const Hittable& world, const Camera& cam)
+{
+	Vec3 attenuation = Vec3(0,0,0);
+
+	HitRecord rec;
+
+	if (world.hit(r, 0.001, std::numeric_limits<double>::infinity(), rec))
+	{
+		Vec3 light = rec.mat->emitted(rec.u, rec.v, rec.point);
+		Ray scattered;
+		if (rec.mat->scatter(r, rec, attenuation, scattered))
+		{
+			double shade = std::fabs(dot(rec.normal, unitVector(r.direction)));
+			return attenuation * (0.1 + 0.4 * shade) + light;
+		}
+
+		else
+		{
+			return light;
+		}
+	}
+	
+	if (cam.useSky)
+		{
+			Vec3 unitDir = unitVector(r.direction);
+			double a = 0.5 * (unitDir.y + 1.0);
+			return ((1.0 - a) * Vec3(1.0, 1.0, 1.0) + a * Vec3(0.5, 0.7, 1.0));
+		}
+
+		else
+		{
+			return cam.background;
+		}
 }
