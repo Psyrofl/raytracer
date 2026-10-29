@@ -66,7 +66,7 @@ bool initialize(SDLState &state);
 void cleanup(SDLState &state);
 uint32_t toPixel(const Vec3& color);
 Vec3 rayColor(const Ray& r, const Hittable& world, int depth, const Camera& cam);
-void renderRows(int startRow, int endRow, const SDLState& state, const Hittable& world, std::vector<Vec3>& accum, const Camera& cam, std::vector<uint32_t>& pixels);
+void renderRows(int startRow, int endRow, int step, int depth, const SDLState& state, const Hittable& world, std::vector<Vec3>& accum, const Camera& cam, std::vector<uint32_t>& pixels, bool preview);
 
 
 int main(int argc, char* argv[])
@@ -318,8 +318,12 @@ int main(int argc, char* argv[])
 			sampleCount = 0;
 		}
 
+		bool preview = cameraChanged;
+		int step  = preview ? 4 : 1;
+		int depth = preview ? 5 : 50;
 
-		if (sampleCount < maxSamples)
+
+		if (preview || sampleCount < maxSamples)
 		{
 			std::vector<std::thread> threads;
 
@@ -332,7 +336,7 @@ int main(int argc, char* argv[])
 					end = state.height;
 				}
 
-				threads.push_back(std::thread(renderRows, start, end, std::cref(state), std::cref(world), std::ref(accum), std::cref(cam), std::ref(pixels)));
+				threads.push_back(std::thread(renderRows, start, end, step, depth, std::cref(state), std::cref(world), std::ref(accum), std::cref(cam), std::ref(pixels), preview));
 
 			}
 
@@ -341,15 +345,18 @@ int main(int argc, char* argv[])
 				t.join();
 			}
 
-
-			sampleCount++;
-
-			for (int k = 0; k < (int)accum.size(); k++)
+			
+			if (!preview)
 			{
-				pixels[k] = toPixel(accum[k] * (1.0 / sampleCount));
+				sampleCount ++;
+				for (int k = 0; k < (int)accum.size(); k++)
+				{
+					pixels[k] = toPixel(accum[k] * (1.0 / sampleCount));
+				}
 			}
 			
 		}
+
 
 		else
 		{
@@ -456,14 +463,12 @@ Vec3 rayColor(const Ray& r, const Hittable& world, int depth, const Camera& cam)
 	}
 }
 
-void renderRows(int startRow, int endRow, const SDLState& state, const Hittable& world, std::vector<Vec3>& accum, const Camera& cam, std::vector<uint32_t>& pixels)
+void renderRows(int startRow, int endRow, int step, int depth, const SDLState& state, const Hittable& world, std::vector<Vec3>& accum, const Camera& cam, std::vector<uint32_t>& pixels, bool preview)
 {
 	Vec3 origin;
-	for (int j = startRow; j < endRow; j++) {
-		for (int i = 0; i < state.width; i++)
+	for (int j = startRow; j < endRow; j += step) {
+		for (int i = 0; i < state.width; i += step)
 		{
-
-
 			double fractionX = static_cast<double>(i + randomDouble()) / (state.width);
 
 			double fractionY = static_cast<double>(j + randomDouble()) / (state.height);
@@ -485,9 +490,24 @@ void renderRows(int startRow, int endRow, const SDLState& state, const Hittable&
 			Vec3 direction = pixelPoint - origin;
 			Ray r(origin, direction, randomDouble());
 
-			Vec3 color = rayColor(r, world, 50, cam);
-			accum[j * state.width + i] = accum[j * state.width + i] + color;
+			Vec3 color = rayColor(r, world, depth, cam);
 			
+			if (preview)
+			{
+				uint32_t pixel = toPixel(color);
+				for (int py = j; py < j + step && py < endRow; py++)
+				{
+					for (int px = i; px < i + step && px < state.width; px++)
+					{
+						pixels[py * state.width + px] = pixel;
+					}
+				}
+			}
+
+			else
+			{
+				accum[j * state.width + i] = accum[j * state.width + i] + color;
+			}
 
 		}
 	}
