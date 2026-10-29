@@ -19,6 +19,7 @@
 #include "perlin.h"
 #include "quad.h"
 #include "instance.h"
+#include "constant_medium.h"
 
 
 struct SDLState
@@ -93,12 +94,12 @@ int main(int argc, char* argv[])
 	auto red = std::make_shared<Lambertian>(Vec3(0.65, 0.05, 0.05));
 	auto white = std::make_shared<Lambertian>(Vec3(0.73, 0.73, 0.73));
 	auto green = std::make_shared<Lambertian>(Vec3(0.12, 0.45, 0.15));
-	auto light = std::make_shared<DiffuseLight>(Vec3(15, 15, 15));
+	auto light = std::make_shared<DiffuseLight>(Vec3(7, 7, 7));
 
 
 	world.add(std::make_shared<Quad>(Vec3(555, 0, 0), Vec3(0, 555, 0), Vec3(0, 0, 555), green));
 	world.add(std::make_shared<Quad>(Vec3(0, 0, 0), Vec3(0, 555, 0), Vec3(0, 0, 555), red));
-	world.add(std::make_shared<Quad>(Vec3(343, 554, 332), Vec3(-130, 0, 0), Vec3(0, 0, -105), light));
+	world.add(std::make_shared<Quad>(Vec3(113, 554, 127), Vec3(330, 0, 0), Vec3(0, 0, 305), light));
 	world.add(std::make_shared<Quad>(Vec3(0, 0, 0), Vec3(555,0, 0), Vec3(0, 0, 555), white));
 	world.add(std::make_shared<Quad>(Vec3(555, 555, 555), Vec3(-555, 0, 0), Vec3(0, 0, -555), white));
 	world.add(std::make_shared<Quad>(Vec3(0, 0, 555), Vec3(555, 0, 0), Vec3(0, 555, 0), white));
@@ -106,12 +107,12 @@ int main(int argc, char* argv[])
 	std::shared_ptr<Hittable> box1 = box(Vec3(0,0,0), Vec3(165,330,165), white);
 	box1 = std::make_shared<RotateY>(box1, 15);
 	box1 = std::make_shared<Translate>(box1, Vec3(265,0,295));
-	world.add(box1);
+	world.add(std::make_shared<ConstantMedium>(box1, 0.01, Vec3(0,0,0)));
 
 	std::shared_ptr<Hittable> box2 = box(Vec3(0,0,0), Vec3(165,165,165), white);
 	box2 = std::make_shared<RotateY>(box2, -18);
 	box2 = std::make_shared<Translate>(box2, Vec3(130,0,65));
-	world.add(box2);
+	world.add(std::make_shared<ConstantMedium>(box2, 0.01, Vec3(1,1,1)));
 
 	/*
 	auto groundColor = std::make_shared<CheckerColor>(Vec3(0.2, 0.3, 0.1), Vec3(0.9, 0.9, 0.9), 0.32);

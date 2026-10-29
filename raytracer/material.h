@@ -113,6 +113,21 @@ public:
 	{
 		return false;
 	}
+};
 
+class Isotropic : public Material
+{
+public:
 
+    std::shared_ptr<Texture> tex;
+    bool scatter(const Ray& rIn, const HitRecord& rec, Vec3& attenuation, Ray& scattered) const override
+    {
+        Vec3 dir = randomUnitVector();
+        scattered = Ray(rec.point, dir, rIn.time);
+        attenuation = tex -> value(rec.u, rec.v, rec.point);
+        return true;
+    }
+
+    Isotropic(const Vec3& color) : tex(std::make_shared<SolidColor>(color)) {}
+	Isotropic(std::shared_ptr<Texture> tex) : tex(tex) {}
 };
