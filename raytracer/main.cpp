@@ -1,4 +1,3 @@
-
 #include <vector>
 #include <cstdint>
 #include <limits>
@@ -18,6 +17,7 @@
 #include "bvh.h"
 #include "texture.h"
 #include "perlin.h"
+#include "quad.h"
 
 
 struct SDLState
@@ -30,12 +30,12 @@ struct SDLState
 
 struct Camera
 {
-	Vec3 lookFrom = Vec3(0,0,12);
+	Vec3 lookFrom = Vec3(0,0,9);
 	Vec3 lookAt = Vec3(0, 0, 0);
 	Vec3 vup = Vec3(0, 1, 0);
-	double defocusAngle = 0.6;
+	double defocusAngle = 0;
 	double focusDist = 10;
-	double vfov = 20;
+	double vfov = 80;
 	double viewportHeight = 0;
 	double viewportWidth = 0;
 	Vec3 u, v, w;
@@ -92,17 +92,31 @@ int main(int argc, char* argv[])
 	auto earthMat = std::make_shared<Lambertian>(earthTex);
 	auto perlinTex = std::make_shared<NoiseTexture>(4);
 	auto perlinMat = std::make_shared<Lambertian>(perlinTex);
+	auto redMat = std::make_shared<Lambertian>(Vec3(1.0, 0.2, 0.2));
+	auto greenMat = std::make_shared<Lambertian>(Vec3(0.2, 1.0, 0.2));
+	auto blueMat = std::make_shared<Lambertian>(Vec3(0.2, 0.2, 1.0));
+	auto orangeMat = std::make_shared<Lambertian>(Vec3(1.0, 0.5, 0.0));
+	auto tealMat = std::make_shared<Lambertian>(Vec3(0.2, 0.8, 0.8));
+	
 
-	world.add(std::make_shared<Sphere>(Vec3(0, 0, 0), 2, earthMat));
-	world.add(std::make_shared<Sphere>(Vec3(0, -1000, 0), 1000, perlinMat));
+	/*world.add(std::make_shared<Sphere>(Vec3(0, 0, 0), 2, earthMat));
+	world.add(std::make_shared<Sphere>(Vec3(0, -1000, 0), 1000, perlinMat	));
 	world.add(std::make_shared<Sphere>(Vec3(0, 1, 0), 1.0, glassMat));
 	world.add(std::make_shared<Sphere>(Vec3(4, 1, 0), 1, metalMat));
 	world.add(std::make_shared<Sphere>(Vec3(-4, 1, 0), 1, brownMat));
 	world.add(std::make_shared<Sphere>(Vec3(0, 2, 0), 2, perlinMat));
+	*/
+
+	world.add(std::make_shared<Quad>(Vec3(-3, -2, 5), Vec3(0, 0, -4), Vec3(0, 4, 0), redMat));
+	world.add(std::make_shared<Quad>(Vec3(-2, -2, 0), Vec3(4, 0, 0), Vec3(0, 4, 0), greenMat));
+	world.add(std::make_shared<Quad>(Vec3(3, -2, 1), Vec3(0, 0, 4), Vec3(0, 4, 0), blueMat));
+	world.add(std::make_shared<Quad>(Vec3(-2, 3, 1), Vec3(4, 0, 0), Vec3(0, 0, 4), orangeMat));
+	world.add(std::make_shared<Quad>(Vec3(-2, -3, 5), Vec3(4, 0, 0), Vec3(0, 0, -4), tealMat));
+	
 
 
 
-	for (int i = -11; i <= 10; i++)
+	/* for (int i = -11; i <= 10; i++)
 	{
 		for (int j = -11; j <= 10; j++)
 		{
@@ -133,7 +147,7 @@ int main(int argc, char* argv[])
 			}
 		}
 	}
-
+*/
 	world = HittableList(std::make_shared<BVHNode>(world));
 
 
@@ -392,11 +406,6 @@ Vec3 rayColor(const Ray& r, const Hittable& world, int depth)
 	double a = 0.5 * (unitDir.y + 1.0);
 	return ((1.0 - a) * Vec3(1.0, 1.0, 1.0) + a * Vec3(0.5, 0.7, 1.0));
 }
-
-
-
-
-
 
 void renderRows(int startRow, int endRow, const SDLState& state, const Hittable& world, std::vector<Vec3>& accum, const Camera& cam, std::vector<uint32_t>& pixels)
 {

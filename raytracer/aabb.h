@@ -20,7 +20,24 @@ public:
         max.y = std::max(a.y, b.y);
         max.z = std::max(a.z, b.z);
 
+    if ((max.x - min.x) < 0.0001)
+    {
+        min.x -= 0.00005;
+        max.x += 0.00005;
     }
+    
+    if ((max.y - min.y) < 0.0001)
+    {
+        min.y -= 0.00005;
+        max.y += 0.00005;
+    }
+
+    if ((max.z - min.z) < 0.0001)
+    {
+        min.z -= 0.00005;
+        max.z += 0.00005;
+    }
+    }   
 
     AABB(const AABB& box1, const AABB& box2) : min(box1.min), max(box2.max)
     {
