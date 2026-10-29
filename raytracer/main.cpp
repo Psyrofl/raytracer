@@ -40,6 +40,8 @@ struct Camera
 	double viewportWidth = 0;
 	Vec3 u, v, w;
 	Vec3 defocusDiskU, defocusDiskV;
+	Vec3 background = Vec3(0, 0, 0);
+	bool useSky = true;
 
 
 	void update(double aspectRatio)
@@ -62,7 +64,7 @@ struct Camera
 bool initialize(SDLState &state);
 void cleanup(SDLState &state);
 uint32_t toPixel(const Vec3& color);
-Vec3 rayColor(const Ray& r, const Hittable& world, int depth);
+Vec3 rayColor(const Ray& r, const Hittable& world, int depth, const Camera& cam);
 void renderRows(int startRow, int endRow, const SDLState& state, const Hittable& world, std::vector<Vec3>& accum, const Camera& cam, std::vector<uint32_t>& pixels);
 
 
@@ -74,6 +76,10 @@ int main(int argc, char* argv[])
 	state.height = 420;
 	bool running = true;
 	Camera cam;
+	cam.useSky = false;                
+	cam.lookFrom = Vec3(26, 3, 6);
+	cam.lookAt = Vec3(0, 2, 0);
+	cam.vfov = 20;
 	double aspectRatio = static_cast<double>(state.width) / state.height;
 	cam.update(aspectRatio);
 	double speed = 5.0;
@@ -97,6 +103,12 @@ int main(int argc, char* argv[])
 	auto blueMat = std::make_shared<Lambertian>(Vec3(0.2, 0.2, 1.0));
 	auto orangeMat = std::make_shared<Lambertian>(Vec3(1.0, 0.5, 0.0));
 	auto tealMat = std::make_shared<Lambertian>(Vec3(0.2, 0.8, 0.8));
+	auto lightMat = std::make_shared<DiffuseLight>(Vec3(4, 4, 4));
+
+	world.add(std::make_shared<Sphere>(Vec3(0, -1000, 0), 1000, perlinMat));   
+	world.add(std::make_shared<Sphere>(Vec3(0, 2, 0), 2, perlinMat));         
+	world.add(std::make_shared<Quad>(Vec3(3, 1, -2), Vec3(2, 0, 0), Vec3(0, 2, 0), lightMat));   
+	world.add(std::make_shared<Sphere>(Vec3(0, 7, 0), 2, lightMat));
 	
 
 	/*world.add(std::make_shared<Sphere>(Vec3(0, 0, 0), 2, earthMat));
@@ -105,18 +117,20 @@ int main(int argc, char* argv[])
 	world.add(std::make_shared<Sphere>(Vec3(4, 1, 0), 1, metalMat));
 	world.add(std::make_shared<Sphere>(Vec3(-4, 1, 0), 1, brownMat));
 	world.add(std::make_shared<Sphere>(Vec3(0, 2, 0), 2, perlinMat));
-	*/
+	
 
-	world.add(std::make_shared<Quad>(Vec3(-3, -2, 5), Vec3(0, 0, -4), Vec3(0, 4, 0), redMat));
+	/* world.add(std::make_shared<Quad>(Vec3(-3, -2, 5), Vec3(0, 0, -4), Vec3(0, 4, 0), redMat));
 	world.add(std::make_shared<Quad>(Vec3(-2, -2, 0), Vec3(4, 0, 0), Vec3(0, 4, 0), greenMat));
 	world.add(std::make_shared<Quad>(Vec3(3, -2, 1), Vec3(0, 0, 4), Vec3(0, 4, 0), blueMat));
 	world.add(std::make_shared<Quad>(Vec3(-2, 3, 1), Vec3(4, 0, 0), Vec3(0, 0, 4), orangeMat));
 	world.add(std::make_shared<Quad>(Vec3(-2, -3, 5), Vec3(4, 0, 0), Vec3(0, 0, -4), tealMat));
+
+	
 	
 
 
 
-	/* for (int i = -11; i <= 10; i++)
+	for (int i = -11; i <= 10; i++)
 	{
 		for (int j = -11; j <= 10; j++)
 		{
@@ -378,7 +392,7 @@ uint32_t toPixel(const Vec3& color)
 	return pixelColor;
 }
 
-Vec3 rayColor(const Ray& r, const Hittable& world, int depth)
+Vec3 rayColor(const Ray& r, const Hittable& world, int depth, const Camera& cam)
 {
 	if (depth <= 0)
 	{
@@ -387,24 +401,35 @@ Vec3 rayColor(const Ray& r, const Hittable& world, int depth)
 
 	HitRecord rec;
 
+
+
 	if (world.hit(r, 0.001, std::numeric_limits<double>::infinity(), rec))
 	{
+		Vec3 light = rec.mat->emitted(rec.u, rec.v, rec.point);
 		Ray scattered;
 		Vec3 attenuation;
 		if (rec.mat->scatter(r, rec, attenuation, scattered))
 		{
-			return attenuation * rayColor(scattered, world, depth - 1);
+			return light + attenuation * rayColor(scattered, world, depth - 1, cam);
 		}
 
 		else
 		{
-			return Vec3(0,0,0);
+			return light;
 		}
 	}
 
-	Vec3 unitDir = unitVector(r.direction);
-	double a = 0.5 * (unitDir.y + 1.0);
-	return ((1.0 - a) * Vec3(1.0, 1.0, 1.0) + a * Vec3(0.5, 0.7, 1.0));
+	if (cam.useSky)
+	{
+		Vec3 unitDir = unitVector(r.direction);
+		double a = 0.5 * (unitDir.y + 1.0);
+		return ((1.0 - a) * Vec3(1.0, 1.0, 1.0) + a * Vec3(0.5, 0.7, 1.0));
+	}
+
+	else
+	{
+		return cam.background;
+	}
 }
 
 void renderRows(int startRow, int endRow, const SDLState& state, const Hittable& world, std::vector<Vec3>& accum, const Camera& cam, std::vector<uint32_t>& pixels)
@@ -436,7 +461,7 @@ void renderRows(int startRow, int endRow, const SDLState& state, const Hittable&
 			Vec3 direction = pixelPoint - origin;
 			Ray r(origin, direction, randomDouble());
 
-			Vec3 color = rayColor(r, world, 10);
+			Vec3 color = rayColor(r, world, 50, cam);
 			accum[j * state.width + i] = accum[j * state.width + i] + color;
 			
 
