@@ -4,6 +4,7 @@
 #include "aabb.h"
 #include "hittable.h"
 #include <cmath>
+#include "hittable_list.h"
 
 
 class Quad : public Hittable
@@ -67,4 +68,32 @@ public:
 
         return false;
     }
+
 };
+
+inline std::shared_ptr<HittableList> box(const Vec3& a, const Vec3& b, std::shared_ptr<Material> mat)
+{
+    double maxX = std::max(a.x, b.x);
+    double minX = std::min(a.x, b.x);
+
+    double maxY = std::max(a.y, b.y);
+    double minY = std::min(a.y, b.y);
+
+    double maxZ = std::max(a.z, b.z);
+    double minZ = std::min(a.z, b.z);
+
+    Vec3 dx = Vec3(maxX - minX, 0, 0);
+    Vec3 dy = Vec3(0, maxY - minY, 0);
+    Vec3 dz = Vec3(0, 0, maxZ - minZ);
+
+    auto sides = std::make_shared<HittableList>();
+
+    sides->add(std::make_shared<Quad>(Vec3(minX, minY, minZ), dx, dy, mat));
+    sides->add(std::make_shared<Quad>(Vec3(minX, minY, maxZ), dx, dy, mat));
+    sides->add(std::make_shared<Quad>(Vec3(minX, minY, minZ), dz, dy, mat));
+    sides->add(std::make_shared<Quad>(Vec3(maxX, minY, minZ), dz, dy, mat));
+    sides->add(std::make_shared<Quad>(Vec3(minX, minY, minZ), dx, dz, mat));
+    sides->add(std::make_shared<Quad>(Vec3(minX, maxY, minZ), dx, dz, mat));
+
+    return sides;
+}

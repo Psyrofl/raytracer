@@ -101,6 +101,9 @@ int main(int argc, char* argv[])
 	world.add(std::make_shared<Quad>(Vec3(555, 555, 555), Vec3(-555, 0, 0), Vec3(0, 0, -555), white));
 	world.add(std::make_shared<Quad>(Vec3(0, 0, 555), Vec3(555, 0, 0), Vec3(0, 555, 0), white));
 
+	world.add(box(Vec3(130, 0, 65), Vec3(295, 165, 230), white));   
+	world.add(box(Vec3(265, 0, 295), Vec3(430, 330, 460), white));   
+
 	/*
 	auto groundColor = std::make_shared<CheckerColor>(Vec3(0.2, 0.3, 0.1), Vec3(0.9, 0.9, 0.9), 0.32);
 	auto groundMat = std::make_shared<Lambertian>(groundColor);
