@@ -18,6 +18,7 @@
 #include "texture.h"
 #include "perlin.h"
 #include "quad.h"
+#include "instance.h"
 
 
 struct SDLState
@@ -101,8 +102,15 @@ int main(int argc, char* argv[])
 	world.add(std::make_shared<Quad>(Vec3(555, 555, 555), Vec3(-555, 0, 0), Vec3(0, 0, -555), white));
 	world.add(std::make_shared<Quad>(Vec3(0, 0, 555), Vec3(555, 0, 0), Vec3(0, 555, 0), white));
 
-	world.add(box(Vec3(130, 0, 65), Vec3(295, 165, 230), white));   
-	world.add(box(Vec3(265, 0, 295), Vec3(430, 330, 460), white));   
+	std::shared_ptr<Hittable> box1 = box(Vec3(0,0,0), Vec3(165,330,165), white);
+	box1 = std::make_shared<RotateY>(box1, 15);
+	box1 = std::make_shared<Translate>(box1, Vec3(265,0,295));
+	world.add(box1);
+
+	std::shared_ptr<Hittable> box2 = box(Vec3(0,0,0), Vec3(165,165,165), white);
+	box2 = std::make_shared<RotateY>(box2, -18);
+	box2 = std::make_shared<Translate>(box2, Vec3(130,0,65));
+	world.add(box2);
 
 	/*
 	auto groundColor = std::make_shared<CheckerColor>(Vec3(0.2, 0.3, 0.1), Vec3(0.9, 0.9, 0.9), 0.32);
@@ -135,7 +143,7 @@ int main(int argc, char* argv[])
 	world.add(std::make_shared<Sphere>(Vec3(0, 2, 0), 2, perlinMat));
 	
 
-	/* world.add(std::make_shared<Quad>(Vec3(-3, -2, 5), Vec3(0, 0, -4), Vec3(0, 4, 0), redMat));
+	world.add(std::make_shared<Quad>(Vec3(-3, -2, 5), Vec3(0, 0, -4), Vec3(0, 4, 0), redMat));
 	world.add(std::make_shared<Quad>(Vec3(-2, -2, 0), Vec3(4, 0, 0), Vec3(0, 4, 0), greenMat));
 	world.add(std::make_shared<Quad>(Vec3(3, -2, 1), Vec3(0, 0, 4), Vec3(0, 4, 0), blueMat));
 	world.add(std::make_shared<Quad>(Vec3(-2, 3, 1), Vec3(4, 0, 0), Vec3(0, 0, 4), orangeMat));
