@@ -34,7 +34,7 @@ struct Camera
 	Vec3 lookAt = Vec3(0, 0, 0);
 	Vec3 vup = Vec3(0, 1, 0);
 	double defocusAngle = 0;
-	double focusDist = 10;
+	double focusDist = 800;
 	double vfov = 80;
 	double viewportHeight = 0;
 	double viewportWidth = 0;
@@ -72,24 +72,37 @@ int main(int argc, char* argv[])
 {
 	SDLState state;
 	SDL_Event event;
-	state.width = 640;
-	state.height = 420;
+	state.width = 600;
+	state.height = 400;
 	bool running = true;
 	Camera cam;
-	cam.useSky = false;                
-	cam.lookFrom = Vec3(26, 3, 6);
-	cam.lookAt = Vec3(0, 2, 0);
-	cam.vfov = 20;
+	cam.useSky = false;
+	cam.lookFrom = Vec3(278, 278, -800);    
+	cam.lookAt = Vec3(278, 278, 0);
+	cam.vfov = 40;
 	double aspectRatio = static_cast<double>(state.width) / state.height;
 	cam.update(aspectRatio);
-	double speed = 5.0;
+	double speed = 200.0;
 
 	std::vector<uint32_t> pixels(state.width * state.height);
 
 	HittableList world;
 
-	auto groundColor = std::make_shared<CheckerColor>(Vec3(0.2, 0.3, 0.1), Vec3(0.9, 0.9, 0.9), 0.32);
+	auto red = std::make_shared<Lambertian>(Vec3(0.65, 0.05, 0.05));
+	auto white = std::make_shared<Lambertian>(Vec3(0.73, 0.73, 0.73));
+	auto green = std::make_shared<Lambertian>(Vec3(0.12, 0.45, 0.15));
+	auto light = std::make_shared<DiffuseLight>(Vec3(15, 15, 15));
 
+
+	world.add(std::make_shared<Quad>(Vec3(555, 0, 0), Vec3(0, 555, 0), Vec3(0, 0, 555), green));
+	world.add(std::make_shared<Quad>(Vec3(0, 0, 0), Vec3(0, 555, 0), Vec3(0, 0, 555), red));
+	world.add(std::make_shared<Quad>(Vec3(343, 554, 332), Vec3(-130, 0, 0), Vec3(0, 0, -105), light));
+	world.add(std::make_shared<Quad>(Vec3(0, 0, 0), Vec3(555,0, 0), Vec3(0, 0, 555), white));
+	world.add(std::make_shared<Quad>(Vec3(555, 555, 555), Vec3(-555, 0, 0), Vec3(0, 0, -555), white));
+	world.add(std::make_shared<Quad>(Vec3(0, 0, 555), Vec3(555, 0, 0), Vec3(0, 555, 0), white));
+
+	/*
+	auto groundColor = std::make_shared<CheckerColor>(Vec3(0.2, 0.3, 0.1), Vec3(0.9, 0.9, 0.9), 0.32);
 	auto groundMat = std::make_shared<Lambertian>(groundColor);
 	auto glassMat = std::make_shared<Dielectric>(1.5);
 	auto metalMat = std::make_shared<Metal>(Vec3(0.7, 0.6, 0.5), 0);
@@ -111,7 +124,7 @@ int main(int argc, char* argv[])
 	world.add(std::make_shared<Sphere>(Vec3(0, 7, 0), 2, lightMat));
 	
 
-	/*world.add(std::make_shared<Sphere>(Vec3(0, 0, 0), 2, earthMat));
+	world.add(std::make_shared<Sphere>(Vec3(0, 0, 0), 2, earthMat));
 	world.add(std::make_shared<Sphere>(Vec3(0, -1000, 0), 1000, perlinMat	));
 	world.add(std::make_shared<Sphere>(Vec3(0, 1, 0), 1.0, glassMat));
 	world.add(std::make_shared<Sphere>(Vec3(4, 1, 0), 1, metalMat));
