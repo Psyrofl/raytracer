@@ -492,13 +492,16 @@ HittableList cityScene(Camera& cam)
 	std::mt19937 rng(42);
 	std::uniform_real_distribution<double> dist(0.0, 1.0);
 
-	cam.useSky = true;
+	cam.useSky = false;
 	cam.lookFrom = Vec3(0, 1.7, 5);
 	cam.lookAt = Vec3(0, 4, -50);
 	cam.vfov = 50;
+	cam.background = Vec3(0.005, 0.005, 0.015);
 
 	auto asphalt = std::make_shared<Lambertian>(Vec3(0.05, 0.05, 0.05));
 	auto sidewalkMat = std::make_shared<Lambertian>(Vec3(0.15, 0.15, 0.15));
+	auto poleMat = std::make_shared<Lambertian>(Vec3(0.05, 0.05, 0.05));
+	auto lampMat = std::make_shared<DiffuseLight>(Vec3(10, 8, 4));
 
 	std::shared_ptr<Hittable> sidewalk1 = box(Vec3(-9, 0, 10), Vec3(-6, 0.15, -110), sidewalkMat);
 	std::shared_ptr<Hittable> sidewalk2 = box(Vec3(6, 0, 10), Vec3(9, 0.15, -110), sidewalkMat);
@@ -542,6 +545,23 @@ HittableList cityScene(Camera& cam)
 
 			z = z - length - gap;
 
+		}
+
+		for (double lampZ = 5; lampZ > -105; lampZ -= 12)
+		{
+			if (side == 0)
+			{
+				double x = -7.5;
+				world.add(box(Vec3(x - 0.1, 0.15, lampZ - 0.1), Vec3(x + 0.1, 4.5, lampZ + 0.1), poleMat));
+				world.add(std::make_shared<Sphere>(Vec3(x, 4.7, lampZ), 0.3, lampMat));
+			}
+
+			else
+			{
+				double x = 7.5;
+				world.add(box(Vec3(x - 0.1, 0.15, lampZ - 0.1), Vec3(x + 0.1, 4.5, lampZ + 0.1), poleMat));
+				world.add(std::make_shared<Sphere>(Vec3(x, 4.7, lampZ), 0.3, lampMat));
+			}
 		}
 	}
 
