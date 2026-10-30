@@ -502,6 +502,8 @@ HittableList cityScene(Camera& cam)
 	auto sidewalkMat = std::make_shared<Lambertian>(Vec3(0.15, 0.15, 0.15));
 	auto poleMat = std::make_shared<Lambertian>(Vec3(0.05, 0.05, 0.05));
 	auto lampMat = std::make_shared<DiffuseLight>(Vec3(10, 8, 4));
+	auto windowMat = std::make_shared<DiffuseLight>(Vec3(1.2, 0.8, 0.35));
+	auto darkWindowMat = std::make_shared<Metal>(Vec3(0.1, 0.1, 0.12), 0.05);
 
 	std::shared_ptr<Hittable> sidewalk1 = box(Vec3(-9, 0, 10), Vec3(-6, 0.15, -110), sidewalkMat);
 	std::shared_ptr<Hittable> sidewalk2 = box(Vec3(6, 0, 10), Vec3(9, 0.15, -110), sidewalkMat);
@@ -522,8 +524,11 @@ HittableList cityScene(Camera& cam)
 			double gap = 0.5 + 1.0 * dist(rng);
 
 			std::shared_ptr<Material> mat;
+
+			bool isGlass = dist(rng) < 0.1;
+
 			
-			if (dist(rng) < 0.1)
+			if (isGlass)
 			{
 				mat = std::make_shared<Dielectric>(1.5);
 			}
@@ -535,6 +540,7 @@ HittableList cityScene(Camera& cam)
 			if (side == 0)
 			{
 				world.add(box(Vec3(-9 - depth, 0, z), Vec3(-9, height, z - length), mat));
+				
 			}
 
 			else
@@ -542,6 +548,33 @@ HittableList cityScene(Camera& cam)
 				world.add(box(Vec3(9, 0, z), Vec3(9 + depth, height, z - length), mat));
 
 			}
+
+			double wallX = (side == 0) ? -9 + 0.01 : 9 - 0.01;
+
+			int count = int((length - 0.5) / 2.5);                 
+			double totalWidth = count * 2.5 - 1.5;                    
+			double startZ = z - (length - totalWidth) / 2;       
+
+			for (int n = 0; n < count; n++)
+			{
+				double wz = startZ - n * 2.5;
+				if (!isGlass)
+				{
+					for (double wy = 2.0; wy < height - 2; wy+= 2.5)
+					{
+						if (dist(rng) < 0.3)
+						{
+							world.add(std::make_shared<Quad>(Vec3(wallX, wy, wz), Vec3(0, 0, -1), Vec3(0, 1.5, 0), windowMat));
+						}
+						else
+						{
+						world.add(std::make_shared<Quad>(Vec3(wallX, wy, wz), Vec3(0, 0, -1), Vec3(0, 1.5, 0), darkWindowMat));
+						} 
+					}
+				}
+			}
+			
+			
 
 			z = z - length - gap;
 
