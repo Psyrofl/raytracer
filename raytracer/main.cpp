@@ -36,7 +36,7 @@ struct Camera
 	Vec3 lookAt = Vec3(0, 0, 0);
 	Vec3 vup = Vec3(0, 1, 0);
 	double defocusAngle = 0;
-	double focusDist = 800;
+	double focusDist = 20;
 	double vfov = 80;
 	double viewportHeight = 0;
 	double viewportWidth = 0;
@@ -44,6 +44,7 @@ struct Camera
 	Vec3 defocusDiskU, defocusDiskV;
 	Vec3 background = Vec3(0, 0, 0);
 	bool useSky = true;
+	double speed = 5;
 
 
 	void update(double aspectRatio)
@@ -69,6 +70,9 @@ uint32_t toPixel(const Vec3& color);
 Vec3 rayColor(const Ray& r, const Hittable& world, int depth, const Camera& cam);
 void renderRows(int startRow, int endRow, int step, int depth, const SDLState& state, const Hittable& world, std::vector<Vec3>& accum, const Camera& cam, std::vector<uint32_t>& pixels, bool preview);
 Vec3 previewColor(const Ray& r, const Hittable& world, const Camera& cam);
+HittableList cornellBox(Camera& cam);
+HittableList cityScene(Camera& cam);
+
 
 
 int main(int argc, char* argv[])
@@ -79,116 +83,15 @@ int main(int argc, char* argv[])
 	state.height = 400;
 	bool running = true;
 	Camera cam;
-	cam.useSky = false;
-	cam.lookFrom = Vec3(278, 278, -800);    
-	cam.lookAt = Vec3(278, 278, 0);
-	cam.vfov = 40;
-	double aspectRatio = static_cast<double>(state.width) / state.height;
-	cam.update(aspectRatio);
-	double speed = 200.0;
 
 	std::vector<uint32_t> pixels(state.width * state.height);
 
-	HittableList world;
-
-	auto red = std::make_shared<Lambertian>(Vec3(0.65, 0.05, 0.05));
-	auto white = std::make_shared<Lambertian>(Vec3(0.73, 0.73, 0.73));
-	auto green = std::make_shared<Lambertian>(Vec3(0.12, 0.45, 0.15));
-	auto light = std::make_shared<DiffuseLight>(Vec3(7, 7, 7));
-
-
-	world.add(std::make_shared<Quad>(Vec3(555, 0, 0), Vec3(0, 555, 0), Vec3(0, 0, 555), green));
-	world.add(std::make_shared<Quad>(Vec3(0, 0, 0), Vec3(0, 555, 0), Vec3(0, 0, 555), red));
-	world.add(std::make_shared<Quad>(Vec3(113, 554, 127), Vec3(330, 0, 0), Vec3(0, 0, 305), light));
-	world.add(std::make_shared<Quad>(Vec3(0, 0, 0), Vec3(555,0, 0), Vec3(0, 0, 555), white));
-	world.add(std::make_shared<Quad>(Vec3(555, 555, 555), Vec3(-555, 0, 0), Vec3(0, 0, -555), white));
-	world.add(std::make_shared<Quad>(Vec3(0, 0, 555), Vec3(555, 0, 0), Vec3(0, 555, 0), white));
-
-	std::shared_ptr<Hittable> box1 = box(Vec3(0,0,0), Vec3(165,330,165), white);
-	box1 = std::make_shared<RotateY>(box1, 15);
-	box1 = std::make_shared<Translate>(box1, Vec3(265,0,295));
-	world.add(std::make_shared<ConstantMedium>(box1, 0.01, Vec3(0,0,0)));
-
-	std::shared_ptr<Hittable> box2 = box(Vec3(0,0,0), Vec3(165,165,165), white);
-	box2 = std::make_shared<RotateY>(box2, -18);
-	box2 = std::make_shared<Translate>(box2, Vec3(130,0,65));
-	world.add(std::make_shared<ConstantMedium>(box2, 0.01, Vec3(1,1,1)));
-
-	/*
-	auto groundColor = std::make_shared<CheckerColor>(Vec3(0.2, 0.3, 0.1), Vec3(0.9, 0.9, 0.9), 0.32);
-	auto groundMat = std::make_shared<Lambertian>(groundColor);
-	auto glassMat = std::make_shared<Dielectric>(1.5);
-	auto metalMat = std::make_shared<Metal>(Vec3(0.7, 0.6, 0.5), 0);
-	auto brownMat = std::make_shared<Lambertian>(Vec3(0.4, 0.2, 0.1));
-	auto earthTex = std::make_shared<ImageTexture>("earthmap.jpg");
-	auto earthMat = std::make_shared<Lambertian>(earthTex);
-	auto perlinTex = std::make_shared<NoiseTexture>(4);
-	auto perlinMat = std::make_shared<Lambertian>(perlinTex);
-	auto redMat = std::make_shared<Lambertian>(Vec3(1.0, 0.2, 0.2));
-	auto greenMat = std::make_shared<Lambertian>(Vec3(0.2, 1.0, 0.2));
-	auto blueMat = std::make_shared<Lambertian>(Vec3(0.2, 0.2, 1.0));
-	auto orangeMat = std::make_shared<Lambertian>(Vec3(1.0, 0.5, 0.0));
-	auto tealMat = std::make_shared<Lambertian>(Vec3(0.2, 0.8, 0.8));
-	auto lightMat = std::make_shared<DiffuseLight>(Vec3(4, 4, 4));
-
-	world.add(std::make_shared<Sphere>(Vec3(0, -1000, 0), 1000, perlinMat));   
-	world.add(std::make_shared<Sphere>(Vec3(0, 2, 0), 2, perlinMat));         
-	world.add(std::make_shared<Quad>(Vec3(3, 1, -2), Vec3(2, 0, 0), Vec3(0, 2, 0), lightMat));   
-	world.add(std::make_shared<Sphere>(Vec3(0, 7, 0), 2, lightMat));
+	HittableList world = cityScene(cam);
 	
-
-	world.add(std::make_shared<Sphere>(Vec3(0, 0, 0), 2, earthMat));
-	world.add(std::make_shared<Sphere>(Vec3(0, -1000, 0), 1000, perlinMat	));
-	world.add(std::make_shared<Sphere>(Vec3(0, 1, 0), 1.0, glassMat));
-	world.add(std::make_shared<Sphere>(Vec3(4, 1, 0), 1, metalMat));
-	world.add(std::make_shared<Sphere>(Vec3(-4, 1, 0), 1, brownMat));
-	world.add(std::make_shared<Sphere>(Vec3(0, 2, 0), 2, perlinMat));
-	
-
-	world.add(std::make_shared<Quad>(Vec3(-3, -2, 5), Vec3(0, 0, -4), Vec3(0, 4, 0), redMat));
-	world.add(std::make_shared<Quad>(Vec3(-2, -2, 0), Vec3(4, 0, 0), Vec3(0, 4, 0), greenMat));
-	world.add(std::make_shared<Quad>(Vec3(3, -2, 1), Vec3(0, 0, 4), Vec3(0, 4, 0), blueMat));
-	world.add(std::make_shared<Quad>(Vec3(-2, 3, 1), Vec3(4, 0, 0), Vec3(0, 0, 4), orangeMat));
-	world.add(std::make_shared<Quad>(Vec3(-2, -3, 5), Vec3(4, 0, 0), Vec3(0, 0, -4), tealMat));
-
-	
-	
-
-
-
-	for (int i = -11; i <= 10; i++)
-	{
-		for (int j = -11; j <= 10; j++)
-		{
-			double choose = randomDouble();
-			Vec3 ballCenter = Vec3(i + 0.9 * randomDouble(), 0.2, j + 0.9 * randomDouble());
-			bool tooClose = (ballCenter - Vec3(4, 0.2, 0)).length() <= 0.9;
-
-
-			if (!tooClose)
-			{
-				if (choose < 0.8)
-				{
-					auto randomMat = std::make_shared<Lambertian>(Vec3(randomDouble(), randomDouble(), randomDouble()) * Vec3(randomDouble(), randomDouble(), randomDouble()));
-					Vec3 center2 = ballCenter + Vec3(0, randomDouble() * 0.5, 0);
-					world.add(std::make_shared<Sphere>(ballCenter, center2, 0.2, randomMat));
-				}
-				else if (choose < 0.95)
-				{
-					auto randomMat = std::make_shared<Metal>(Vec3(0.5 + 0.5 * randomDouble(), 0.5 + 0.5 * randomDouble(), 0.5 + 0.5 * randomDouble()), 0.5 * randomDouble());
-					world.add(std::make_shared<Sphere>(ballCenter, 0.2, randomMat));
-
-				}
-				else
-				{
-					world.add(std::make_shared<Sphere>(ballCenter, 0.2, glassMat));
-
-				}
-			}
-		}
-	}
-*/
 	world = HittableList(std::make_shared<BVHNode>(world));
+
+	double aspectRatio = static_cast<double>(state.width) / state.height;
+	cam.update(aspectRatio);
 
 
 
@@ -305,7 +208,7 @@ int main(int argc, char* argv[])
 
 		if (dot(move, move) > 0)
 		{
-			move = move * (speed * deltaTime);
+			move = move * (cam.speed * deltaTime);
 
 			cam.lookFrom = cam.lookFrom + move;
 			cameraChanged = true;
@@ -545,4 +448,102 @@ Vec3 previewColor(const Ray& r, const Hittable& world, const Camera& cam)
 		{
 			return cam.background;
 		}
+}
+
+HittableList cornellBox(Camera& cam)
+{
+	HittableList world;
+
+	cam.useSky = false;
+	cam.lookFrom = Vec3(278, 278, -800);
+	cam.lookAt = Vec3(278, 278, 0);
+	cam.vfov = 40;
+	cam.speed = 200;
+
+	auto red = std::make_shared<Lambertian>(Vec3(0.65, 0.05, 0.05));
+	auto white = std::make_shared<Lambertian>(Vec3(0.73, 0.73, 0.73));
+	auto green = std::make_shared<Lambertian>(Vec3(0.12, 0.45, 0.15));
+	auto light = std::make_shared<DiffuseLight>(Vec3(7, 7, 7));
+
+
+	world.add(std::make_shared<Quad>(Vec3(555, 0, 0), Vec3(0, 555, 0), Vec3(0, 0, 555), green));
+	world.add(std::make_shared<Quad>(Vec3(0, 0, 0), Vec3(0, 555, 0), Vec3(0, 0, 555), red));
+	world.add(std::make_shared<Quad>(Vec3(113, 554, 127), Vec3(330, 0, 0), Vec3(0, 0, 305), light));
+	world.add(std::make_shared<Quad>(Vec3(0, 0, 0), Vec3(555, 0, 0), Vec3(0, 0, 555), white));
+	world.add(std::make_shared<Quad>(Vec3(555, 555, 555), Vec3(-555, 0, 0), Vec3(0, 0, -555), white));
+	world.add(std::make_shared<Quad>(Vec3(0, 0, 555), Vec3(555, 0, 0), Vec3(0, 555, 0), white));
+
+	std::shared_ptr<Hittable> box1 = box(Vec3(0, 0, 0), Vec3(165, 330, 165), white);
+	box1 = std::make_shared<RotateY>(box1, 15);
+	box1 = std::make_shared<Translate>(box1, Vec3(265, 0, 295));
+	world.add(std::make_shared<ConstantMedium>(box1, 0.01, Vec3(0, 0, 0)));
+
+	std::shared_ptr<Hittable> box2 = box(Vec3(0, 0, 0), Vec3(165, 165, 165), white);
+	box2 = std::make_shared<RotateY>(box2, -18);
+	box2 = std::make_shared<Translate>(box2, Vec3(130, 0, 65));
+	world.add(std::make_shared<ConstantMedium>(box2, 0.01, Vec3(1, 1, 1)));
+	return world;
+}
+
+HittableList cityScene(Camera& cam)
+{
+	HittableList world; 
+
+	std::mt19937 rng(42);
+	std::uniform_real_distribution<double> dist(0.0, 1.0);
+
+	cam.useSky = true;
+	cam.lookFrom = Vec3(0, 1.7, 5);
+	cam.lookAt = Vec3(0, 4, -50);
+	cam.vfov = 50;
+
+	auto asphalt = std::make_shared<Lambertian>(Vec3(0.05, 0.05, 0.05));
+	auto sidewalkMat = std::make_shared<Lambertian>(Vec3(0.15, 0.15, 0.15));
+
+	std::shared_ptr<Hittable> sidewalk1 = box(Vec3(-9, 0, 10), Vec3(-6, 0.15, -110), sidewalkMat);
+	std::shared_ptr<Hittable> sidewalk2 = box(Vec3(6, 0, 10), Vec3(9, 0.15, -110), sidewalkMat);
+
+
+	world.add(std::make_shared<Quad>(Vec3(-6, 0, 10), Vec3(12, 0, 0), Vec3(0, 0, -120), asphalt));
+	world.add(sidewalk1);
+	world.add(sidewalk2);
+
+	for (int side = 0; side < 2; side++)
+	{
+		double z = 10;
+		while (z > -110)
+		{
+			double length = 6 + 6 * dist(rng);
+			double depth = 8 + 6 * dist(rng);
+			double height = 8 + 30 * dist(rng);
+			double gap = 0.5 + 1.0 * dist(rng);
+
+			std::shared_ptr<Material> mat;
+			
+			if (dist(rng) < 0.1)
+			{
+				mat = std::make_shared<Dielectric>(1.5);
+			}
+			else
+			{
+				mat = std::make_shared<Lambertian>(Vec3(0.1 + 0.15 * dist(rng), 0.1 + 0.15 * dist(rng), 0.1 + 0.15 * dist(rng)));
+			}
+
+			if (side == 0)
+			{
+				world.add(box(Vec3(-9 - depth, 0, z), Vec3(-9, height, z - length), mat));
+			}
+
+			else
+			{
+				world.add(box(Vec3(9, 0, z), Vec3(9 + depth, height, z - length), mat));
+
+			}
+
+			z = z - length - gap;
+
+		}
+	}
+
+	return world;
 }

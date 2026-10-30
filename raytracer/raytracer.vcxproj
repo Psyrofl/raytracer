@@ -87,7 +87,9 @@
   <ItemGroup>
     <ClInclude Include="aabb.h" />
     <ClInclude Include="bvh.h" />
+    <ClInclude Include="constant_medium.h" />
     <ClInclude Include="hittable_list.h" />
+    <ClInclude Include="instance.h" />
     <ClInclude Include="material.h" />
     <ClInclude Include="perlin.h" />
     <ClInclude Include="quad.h" />
