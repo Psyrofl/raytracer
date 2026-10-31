@@ -512,6 +512,8 @@ HittableList cityScene(Camera& cam)
 	auto headMat = std::make_shared<DiffuseLight>(Vec3(20, 20, 16));
 	auto bluePaint = std::make_shared<Metal>(Vec3(0.05, 0.1, 0.3), 0.2);
 	auto greyPaint = std::make_shared<Metal>(Vec3(0.2, 0.2, 0.22), 0.2);
+	auto moonTex = std::make_shared<ImageTexture>("moonmap.jpg");
+	auto moonMat = std::make_shared<DiffuseLight>(moonTex); 
 
 
 	std::shared_ptr<Hittable> sidewalk1 = box(Vec3(-9, 0, 10), Vec3(-6, 0.15, -110), sidewalkMat);
@@ -525,6 +527,8 @@ HittableList cityScene(Camera& cam)
 	world.add(std::make_shared<Sphere>(Vec3(-3.6, 0.7, -30), Vec3(-3.6, 0.7, -22), 0.15, headlightMat));
 	world.add(std::make_shared<Sphere>(Vec3(2.4, 0.8, -18), Vec3(2.4, 0.8, -26), 0.1, rearLight));
 	world.add(std::make_shared<Sphere>(Vec3(3.6, 0.8, -18), Vec3(3.6, 0.8, -26), 0.1, rearLight));
+	world.add(std::make_shared<Sphere>(Vec3(0, 70, -200), 12, moonMat));
+
 
 
 	for (int side = 0; side < 2; side++)
