@@ -138,10 +138,11 @@ public:
 
 	MovingTranslate(std::shared_ptr<Hittable> object, const Vec3& start, const Vec3& end) : object(object), start(start), end(end)
 	{
-		Vec3 min = object->boundingBox().min + start;
-		Vec3 max = object->boundingBox().max + end;
+		AABB box = object->boundingBox();
+		AABB startBox = AABB(box.min + start, box.max + start);
+		AABB endBox = AABB(box.min + end, box.max + end);
 
-		bbox = AABB(min, max);
+		bbox = AABB(startBox, endBox);
 	}
 
 
