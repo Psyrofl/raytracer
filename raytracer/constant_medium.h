@@ -75,7 +75,7 @@ public:
         rec.point = r.at(rec.t);
         rec.normal = Vec3(1, 0, 0);
         rec.frontFace = true;
-        rec.mat = phaseFunction;
+        rec.mat = phaseFunction.get();
         return true;
     }
 };

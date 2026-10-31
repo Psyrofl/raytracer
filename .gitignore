@@ -4,3 +4,4 @@ x64/
 raytracer/game
 .DS_Store
 .claude/
+raytracer/render_*.png

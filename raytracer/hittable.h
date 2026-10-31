@@ -14,7 +14,7 @@ struct HitRecord
 	double u = 0;
 	double v = 0;
 	bool frontFace = false;
-	std::shared_ptr<Material> mat;
+	const Material* mat = nullptr;
 
 	void setFaceNormal(const Ray& r, const Vec3& outwardNormal)
 	{

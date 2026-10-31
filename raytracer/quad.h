@@ -58,7 +58,7 @@ public:
             {
                 rec.t = t;
                 rec.point = P;
-                rec.mat = mat;
+                rec.mat = mat.get();
                 rec.u = a;
                 rec.v = b;
                 rec.setFaceNormal(r, normal);

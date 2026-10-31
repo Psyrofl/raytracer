@@ -97,7 +97,7 @@ public:
 		rec.point = r.at(rec.t);
 		outward = (rec.point - currentCenter) * (1.0 / radius);
 		rec.setFaceNormal(r, outward);
-		rec.mat = mat;
+		rec.mat = mat.get();
 		getSphereUV(outward, rec.u, rec.v);
 		return true;
 	}

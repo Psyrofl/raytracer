@@ -7,6 +7,7 @@
 #include <numbers>
 #include <thread>
 #include <functional>
+#include <string>
 
 #include <SDL3/SDL.h>
 #include "ray.h"
@@ -102,7 +103,7 @@ int main(int argc, char* argv[])
 	}
 
 	int sampleCount = 0;
-	const int maxSamples = 500;
+	const int maxSamples = 2000;
 	std::vector<Vec3> accum(state.width * state.height);
 
 	uint64_t prevTime = SDL_GetTicks();
@@ -120,6 +121,23 @@ int main(int argc, char* argv[])
 			if (event.type == SDL_EVENT_QUIT)
 			{
 				running = false;
+			}
+
+			if (event.type == SDL_EVENT_KEY_DOWN && event.key.scancode == SDL_SCANCODE_P)
+			{
+				SDL_Surface* shot = SDL_CreateSurfaceFrom(state.width, state.height, SDL_PIXELFORMAT_ARGB8888, pixels.data(), state.width * sizeof(uint32_t));
+
+				if (shot)
+				{
+					std::string name = "render_" + std::to_string(SDL_GetTicks()) + "_" + std::to_string(sampleCount) + "samples.png";
+
+					if (!IMG_SavePNG(shot, name.c_str()))
+					{
+						SDL_Log("Save failed: %s", SDL_GetError());
+					}
+
+					SDL_DestroySurface(shot);
+				}
 			}
 
 			if (event.type == SDL_EVENT_MOUSE_WHEEL)
@@ -393,7 +411,8 @@ void renderRows(int startRow, int endRow, int step, int depth, const SDLState& s
 			Vec3 direction = pixelPoint - origin;
 			Ray r(origin, direction, randomDouble());
 
-			Vec3 color = preview ? previewColor(r, world, cam) : rayColor(r, world, depth, cam);			
+			Vec3 color = preview ? previewColor(r, world, cam) : rayColor(r, world, depth, cam);
+			color = Vec3(std::min(color.x, 10.0), std::min(color.y, 10.0), std::min(color.z, 10.0));
 			if (preview)
 			{
 				uint32_t pixel = toPixel(color);
@@ -494,14 +513,14 @@ HittableList cityScene(Camera& cam)
 
 	cam.useSky = false;
 	cam.lookFrom = Vec3(0, 1.7, 5);
-	cam.lookAt = Vec3(0, 4, -50);
+	cam.lookAt = Vec3(0, 8, -50);
 	cam.vfov = 50;
-	cam.background = Vec3(0.005, 0.005, 0.015);
+	cam.background = Vec3(0.02, 0.025, 0.05);
 
 	auto asphalt = std::make_shared<Lambertian>(Vec3(0.12, 0.12, 0.12));
-	auto sidewalkMat = std::make_shared<Lambertian>(Vec3(0.15, 0.15, 0.15));
+	auto sidewalkMat = std::make_shared<Lambertian>(Vec3(0.3, 0.3, 0.3));
 	auto poleMat = std::make_shared<Lambertian>(Vec3(0.05, 0.05, 0.05));
-	auto lampMat = std::make_shared<DiffuseLight>(Vec3(10, 8, 4));
+	auto lampMat = std::make_shared<DiffuseLight>(Vec3(20, 15, 7));
 	auto windowMat = std::make_shared<DiffuseLight>(Vec3(1.2, 0.8, 0.35));
 	auto darkWindowMat = std::make_shared<Metal>(Vec3(0.1, 0.1, 0.12), 0.05);
 	auto puddleMat = std::make_shared<Metal>(Vec3(0.5,0.5,0.55), 0.02);
@@ -514,6 +533,7 @@ HittableList cityScene(Camera& cam)
 	auto greyPaint = std::make_shared<Metal>(Vec3(0.2, 0.2, 0.22), 0.2);
 	auto moonTex = std::make_shared<ImageTexture>("moonmap.jpg");
 	auto moonMat = std::make_shared<DiffuseLight>(moonTex); 
+	auto white = std::make_shared<Lambertian>(Vec3(0.73, 0.73, 0.73));
 
 
 	std::shared_ptr<Hittable> sidewalk1 = box(Vec3(-9, 0, 10), Vec3(-6, 0.15, -110), sidewalkMat);
@@ -606,21 +626,22 @@ HittableList cityScene(Camera& cam)
 			{
 				double x = -7.5;
 				world.add(box(Vec3(x - 0.1, 0.15, lampZ - 0.1), Vec3(x + 0.1, 4.5, lampZ + 0.1), poleMat));
-				world.add(std::make_shared<Sphere>(Vec3(x, 4.7, lampZ), 0.3, lampMat));
+				world.add(std::make_shared<Sphere>(Vec3(x, 4.7, lampZ), 0.6, lampMat));
 			}
 
 			else
 			{
 				double x = 7.5;
 				world.add(box(Vec3(x - 0.1, 0.15, lampZ - 0.1), Vec3(x + 0.1, 4.5, lampZ + 0.1), poleMat));
-				world.add(std::make_shared<Sphere>(Vec3(x, 4.7, lampZ), 0.3, lampMat));
+				world.add(std::make_shared<Sphere>(Vec3(x, 4.7, lampZ), 0.6, lampMat));
 			}
 		}
 
 		
 	}
 	
-	bool leftSide = true;   
+
+	bool leftSide = true;
 
 	for (double puddleZ = -5; puddleZ > -95; puddleZ -= 10)
 	{
@@ -647,6 +668,13 @@ HittableList cityScene(Camera& cam)
 
 	auto parked4 = makeCar(greyPaint, darkWindowMat, tireMat, tireMat);
 	world.add(std::make_shared<Translate>(parked4, Vec3(-5.9, 0, -45)));    
+
+	auto fogBounds = box(Vec3(-40, 0, -130), Vec3(40, 50, 15), white);
+	world.add(std::make_shared<ConstantMedium>(fogBounds, 0.01, Vec3(0.6, 0.65, 0.8)));
+
+	auto groundFog = box(Vec3(-40, 0, -130), Vec3(40, 2.5, 15), white);
+	world.add(std::make_shared<ConstantMedium>(groundFog, 0.03, Vec3(0.7, 0.7, 0.8)));
+	
 
 	return world;
 }
