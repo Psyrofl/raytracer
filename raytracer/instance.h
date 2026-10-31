@@ -123,3 +123,37 @@ public:
 			return true;
 		}
 };
+
+class MovingTranslate : public Hittable
+{
+public:
+	std::shared_ptr<Hittable> object;
+	Vec3 start, end;
+	AABB bbox;
+
+	AABB boundingBox() const override
+	{
+		return bbox;
+	}
+
+	MovingTranslate(std::shared_ptr<Hittable> object, const Vec3& start, const Vec3& end) : object(object), start(start), end(end)
+	{
+		Vec3 min = object->boundingBox().min + start;
+		Vec3 max = object->boundingBox().max + end;
+
+		bbox = AABB(min, max);
+	}
+
+
+	bool hit(const Ray& r, double tmin, double tmax, HitRecord& rec) const override
+	{
+		Vec3 offset = start + r.time * (end - start);
+		Ray offsetRay = Ray(r.origin - offset, r.direction, r.time);
+		if (!(object->hit(offsetRay, tmin, tmax, rec)))
+		{
+			return false;
+		}
+		rec.point = rec.point + offset;
+		return true;
+	}
+};

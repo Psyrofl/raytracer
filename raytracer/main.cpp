@@ -72,7 +72,7 @@ void renderRows(int startRow, int endRow, int step, int depth, const SDLState& s
 Vec3 previewColor(const Ray& r, const Hittable& world, const Camera& cam);
 HittableList cornellBox(Camera& cam);
 HittableList cityScene(Camera& cam);
-
+std::shared_ptr<HittableList> makeCar(std::shared_ptr<Material> paint, std::shared_ptr<Material> glass, std::shared_ptr<Material> tire, std::shared_ptr<Material> lights);
 
 
 int main(int argc, char* argv[])
@@ -505,6 +505,14 @@ HittableList cityScene(Camera& cam)
 	auto windowMat = std::make_shared<DiffuseLight>(Vec3(1.2, 0.8, 0.35));
 	auto darkWindowMat = std::make_shared<Metal>(Vec3(0.1, 0.1, 0.12), 0.05);
 	auto puddleMat = std::make_shared<Metal>(Vec3(0.5,0.5,0.55), 0.02);
+	auto headlightMat = std::make_shared<DiffuseLight>(Vec3(120, 20, 16));
+	auto rearLight = std::make_shared<DiffuseLight>(Vec3(15, 1, 1));
+	auto redPaint = std::make_shared<Metal>(Vec3(0.3, 0.05, 0.05), 0.2);
+	auto tireMat = std::make_shared<Lambertian>(Vec3(0.02, 0.02, 0.02));
+	auto headMat = std::make_shared<DiffuseLight>(Vec3(20, 20, 16));
+	auto bluePaint = std::make_shared<Metal>(Vec3(0.05, 0.1, 0.3), 0.2);
+	auto greyPaint = std::make_shared<Metal>(Vec3(0.2, 0.2, 0.22), 0.2);
+
 
 	std::shared_ptr<Hittable> sidewalk1 = box(Vec3(-9, 0, 10), Vec3(-6, 0.15, -110), sidewalkMat);
 	std::shared_ptr<Hittable> sidewalk2 = box(Vec3(6, 0, 10), Vec3(9, 0.15, -110), sidewalkMat);
@@ -513,6 +521,11 @@ HittableList cityScene(Camera& cam)
 	world.add(std::make_shared<Quad>(Vec3(-6, 0, 10), Vec3(12, 0, 0), Vec3(0, 0, -120), asphalt));
 	world.add(sidewalk1);
 	world.add(sidewalk2);
+	world.add(std::make_shared<Sphere>(Vec3(-2.4, 0.7, -30), Vec3(-2.4, 0.7, -22), 0.15, headlightMat));
+	world.add(std::make_shared<Sphere>(Vec3(-3.6, 0.7, -30), Vec3(-3.6, 0.7, -22), 0.15, headlightMat));
+	world.add(std::make_shared<Sphere>(Vec3(2.4, 0.8, -18), Vec3(2.4, 0.8, -26), 0.1, rearLight));
+	world.add(std::make_shared<Sphere>(Vec3(3.6, 0.8, -18), Vec3(3.6, 0.8, -26), 0.1, rearLight));
+
 
 	for (int side = 0; side < 2; side++)
 	{
@@ -599,6 +612,8 @@ HittableList cityScene(Camera& cam)
 				world.add(std::make_shared<Sphere>(Vec3(x, 4.7, lampZ), 0.3, lampMat));
 			}
 		}
+
+		
 	}
 	
 	bool leftSide = true;   
@@ -612,5 +627,39 @@ HittableList cityScene(Camera& cam)
 		world.add(std::make_shared<Quad>(Vec3(puddleX, 0.01, puddleZ), Vec3(puddleWidth, 0, 0), Vec3(0,0, -puddleLength), puddleMat));
 	}
 
+	auto oncoming = makeCar(redPaint, darkWindowMat, tireMat, headMat);
+	world.add(std::make_shared<MovingTranslate>(oncoming, Vec3(-3.6, 0, -30), Vec3(-3.6, 0, -28.5)));
+	auto leaving = makeCar(bluePaint, darkWindowMat, tireMat, rearLight);
+	world.add(std::make_shared<MovingTranslate>(leaving, Vec3(1.8, 0, -18), Vec3(1.8, 0, -19.5)));
+
+	auto parked1 = makeCar(greyPaint, darkWindowMat, tireMat, tireMat);
+	world.add(std::make_shared<Translate>(parked1, Vec3(4.1, 0, -32)));     
+
+	auto parked2 = makeCar(bluePaint, darkWindowMat, tireMat, tireMat);
+	world.add(std::make_shared<Translate>(parked2, Vec3(4.1, 0, -60)));    
+
+	auto parked3 = makeCar(redPaint, darkWindowMat, tireMat, tireMat);
+	world.add(std::make_shared<Translate>(parked3, Vec3(-5.9, 0, -12)));    
+
+	auto parked4 = makeCar(greyPaint, darkWindowMat, tireMat, tireMat);
+	world.add(std::make_shared<Translate>(parked4, Vec3(-5.9, 0, -45)));    
+
 	return world;
+}
+
+std::shared_ptr<HittableList> makeCar(std::shared_ptr<Material> paint, std::shared_ptr<Material> glass, std::shared_ptr<Material> tire, std::shared_ptr<Material> lights) 
+{
+	auto car = std::make_shared<HittableList>();
+	auto paintMat = std::make_shared<Metal>(Vec3(0.3, 0.05, 0.05), 0.2);
+	auto darkWindowMat = std::make_shared<Metal>(Vec3(0.1, 0.1, 0.12), 0.05);	
+	
+	car->add(box(Vec3(0, 0.3, 0), Vec3(1.8, 0.9, -4.5), paintMat));
+	car->add(box( Vec3(0.15, 0.9, -1), Vec3(1.65, 1.4, - 3.5), darkWindowMat));
+	car->add(std::make_shared<Sphere>(Vec3(0, 0.3, -1), 0.3, tire));
+	car->add(std::make_shared<Sphere>(Vec3(1.8, 0.3, -1), 0.3, tire));
+	car->add(std::make_shared<Sphere>(Vec3(0, 0.3, -3.5), 0.3, tire));
+	car->add(std::make_shared<Sphere>(Vec3(1.8, 0.3, -3.5), 0.3, tire));
+
+	return car;
+	
 }
