@@ -526,11 +526,11 @@ HittableList cityScene(Camera& cam)
 	auto puddleMat = std::make_shared<Metal>(Vec3(0.5,0.5,0.55), 0.02);
 	auto headlightMat = std::make_shared<DiffuseLight>(Vec3(120, 20, 16));
 	auto rearLight = std::make_shared<DiffuseLight>(Vec3(15, 1, 1));
-	auto redPaint = std::make_shared<Metal>(Vec3(0.3, 0.05, 0.05), 0.2);
+	auto redPaint = std::make_shared<Lambertian>(Vec3(0.7, 0.08, 0.08));
 	auto tireMat = std::make_shared<Lambertian>(Vec3(0.02, 0.02, 0.02));
 	auto headMat = std::make_shared<DiffuseLight>(Vec3(20, 20, 16));
-	auto bluePaint = std::make_shared<Metal>(Vec3(0.05, 0.1, 0.3), 0.2);
-	auto greyPaint = std::make_shared<Metal>(Vec3(0.2, 0.2, 0.22), 0.2);
+	auto bluePaint = std::make_shared<Lambertian>(Vec3(0.1, 0.25, 0.75));
+	auto greyPaint = std::make_shared<Lambertian>(Vec3(0.55, 0.55, 0.6));
 	auto moonTex = std::make_shared<ImageTexture>("moonmap.jpg");
 	auto moonMat = std::make_shared<DiffuseLight>(moonTex); 
 	auto white = std::make_shared<Lambertian>(Vec3(0.73, 0.73, 0.73));
@@ -653,9 +653,9 @@ HittableList cityScene(Camera& cam)
 	}
 
 	auto oncoming = makeCar(redPaint, darkWindowMat, tireMat, headMat);
-	world.add(std::make_shared<MovingTranslate>(oncoming, Vec3(-3.6, 0, -30), Vec3(-3.6, 0, -28.5)));
+	world.add(std::make_shared<MovingTranslate>(oncoming, Vec3(-3.6, 0, -22), Vec3(-3.6, 0, -20.5)));
 	auto leaving = makeCar(bluePaint, darkWindowMat, tireMat, rearLight);
-	world.add(std::make_shared<MovingTranslate>(leaving, Vec3(1.8, 0, -18), Vec3(1.8, 0, -19.5)));
+	world.add(std::make_shared<MovingTranslate>(leaving, Vec3(1.8, 0, -12), Vec3(1.8, 0, -13.5)));
 
 	auto parked1 = makeCar(greyPaint, darkWindowMat, tireMat, tireMat);
 	world.add(std::make_shared<Translate>(parked1, Vec3(4.1, 0, -32)));     
@@ -670,10 +670,10 @@ HittableList cityScene(Camera& cam)
 	world.add(std::make_shared<Translate>(parked4, Vec3(-5.9, 0, -45)));    
 
 	auto fogBounds = box(Vec3(-40, 0, -130), Vec3(40, 50, 15), white);
-	world.add(std::make_shared<ConstantMedium>(fogBounds, 0.01, Vec3(0.6, 0.65, 0.8)));
+	world.add(std::make_shared<ConstantMedium>(fogBounds, 0.006, Vec3(0.6, 0.65, 0.8)));
 
 	auto groundFog = box(Vec3(-40, 0, -130), Vec3(40, 2.5, 15), white);
-	world.add(std::make_shared<ConstantMedium>(groundFog, 0.03, Vec3(0.7, 0.7, 0.8)));
+	world.add(std::make_shared<ConstantMedium>(groundFog, 0.01, Vec3(0.7, 0.7, 0.8)));
 	
 
 	return world;
