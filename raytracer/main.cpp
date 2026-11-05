@@ -21,6 +21,9 @@
 #include "quad.h"
 #include "instance.h"
 #include "constant_medium.h"
+#include "sampling.h"
+
+const bool useHalton = false;
 
 
 struct SDLState
@@ -69,7 +72,7 @@ bool initialize(SDLState &state);
 void cleanup(SDLState &state);
 uint32_t toPixel(const Vec3& color);
 Vec3 rayColor(const Ray& r, const Hittable& world, int depth, const Camera& cam);
-void renderRows(int startRow, int endRow, int step, int depth, const SDLState& state, const Hittable& world, std::vector<Vec3>& accum, const Camera& cam, std::vector<uint32_t>& pixels, bool preview);
+void renderRows(int startRow, int endRow, int step, int depth, int sampleIndex, const SDLState& state, const Hittable& world, std::vector<Vec3>& accum, const Camera& cam, std::vector<uint32_t>& pixels, bool preview);
 Vec3 previewColor(const Ray& r, const Hittable& world, const Camera& cam);
 HittableList cornellBox(Camera& cam);
 HittableList cityScene(Camera& cam);
@@ -259,7 +262,7 @@ int main(int argc, char* argv[])
 					end = state.height;
 				}
 
-				threads.push_back(std::thread(renderRows, start, end, step, depth, std::cref(state), std::cref(world), std::ref(accum), std::cref(cam), std::ref(pixels), preview));
+				threads.push_back(std::thread(renderRows, start, end, step, depth, sampleCount + 1, std::cref(state), std::cref(world), std::ref(accum), std::cref(cam), std::ref(pixels), preview));
 
 			}
 
@@ -384,15 +387,29 @@ Vec3 rayColor(const Ray& r, const Hittable& world, int depth, const Camera& cam)
 	}
 }
 
-void renderRows(int startRow, int endRow, int step, int depth, const SDLState& state, const Hittable& world, std::vector<Vec3>& accum, const Camera& cam, std::vector<uint32_t>& pixels, bool preview)
+void renderRows(int startRow, int endRow, int step, int depth, int sampleIndex, const SDLState& state, const Hittable& world, std::vector<Vec3>& accum, const Camera& cam, std::vector<uint32_t>& pixels, bool preview)
 {
 	Vec3 origin;
 	for (int j = startRow; j < endRow; j += step) {
 		for (int i = 0; i < state.width; i += step)
 		{
-			double fractionX = static_cast<double>(i + randomDouble()) / (state.width);
+			uint32_t pixel = j * state.width + i;
+			double hx = useHalton ? halton(sampleIndex, 2) + pixelOffset(pixel, 0) : randomDouble();
+			if (hx >= 1.0)
+			{
+				hx -= 1.0;
+			}
 
-			double fractionY = static_cast<double>(j + randomDouble()) / (state.height);
+			double fractionX = (i + hx) / state.width;
+
+			double hy = useHalton ? halton(sampleIndex, 3) + pixelOffset(pixel, 1) : randomDouble();
+			if (hy >= 1.0)
+			{
+				hy -= 1.0;
+			}
+
+			double fractionY = (j + hy) / state.height;
+
 
 			double x = (fractionX - 0.5) * cam.viewportWidth;
 			double y = (0.5 - fractionY) * cam.viewportHeight;
