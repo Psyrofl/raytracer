@@ -5,3 +5,4 @@ raytracer/game
 .DS_Store
 .claude/
 raytracer/render_*.png
+raytracer/bench_*.png

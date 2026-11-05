@@ -23,7 +23,8 @@
 #include "constant_medium.h"
 #include "sampling.h"
 
-const bool useHalton = false;
+// Set from the command line in benchmark mode: raytracer.exe halton 1024
+bool useHalton = false;
 
 
 struct SDLState
@@ -77,6 +78,7 @@ Vec3 previewColor(const Ray& r, const Hittable& world, const Camera& cam);
 HittableList cornellBox(Camera& cam);
 HittableList cityScene(Camera& cam);
 std::shared_ptr<HittableList> makeCar(std::shared_ptr<Material> paint, std::shared_ptr<Material> glass, std::shared_ptr<Material> tire, std::shared_ptr<Material> lights);
+void savePixels(const SDLState& state, std::vector<uint32_t>& pixels, const std::string& name);
 
 
 int main(int argc, char* argv[])
@@ -105,6 +107,16 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
+	// Benchmark mode saves at 16 samples and at benchmarkSamples, then quits
+	int benchmarkSamples = 0;
+	std::string benchmarkName;
+	if (argc >= 3)
+	{
+		benchmarkName = argv[1];
+		useHalton = benchmarkName == "halton";
+		benchmarkSamples = std::stoi(argv[2]);
+	}
+
 	int sampleCount = 0;
 	const int maxSamples = 2000;
 	std::vector<Vec3> accum(state.width * state.height);
@@ -128,19 +140,8 @@ int main(int argc, char* argv[])
 
 			if (event.type == SDL_EVENT_KEY_DOWN && event.key.scancode == SDL_SCANCODE_P)
 			{
-				SDL_Surface* shot = SDL_CreateSurfaceFrom(state.width, state.height, SDL_PIXELFORMAT_ARGB8888, pixels.data(), state.width * sizeof(uint32_t));
-
-				if (shot)
-				{
-					std::string name = "render_" + std::to_string(SDL_GetTicks()) + "_" + std::to_string(sampleCount) + "samples.png";
-
-					if (!IMG_SavePNG(shot, name.c_str()))
-					{
-						SDL_Log("Save failed: %s", SDL_GetError());
-					}
-
-					SDL_DestroySurface(shot);
-				}
+				std::string name = "render_" + std::to_string(SDL_GetTicks()) + "_" + std::to_string(sampleCount) + "samples.png";
+				savePixels(state, pixels, name);
 			}
 
 			if (event.type == SDL_EVENT_MOUSE_WHEEL)
@@ -279,6 +280,15 @@ int main(int argc, char* argv[])
 				{
 					pixels[k] = toPixel(accum[k] * (1.0 / sampleCount));
 				}
+
+				if (benchmarkSamples > 0 && (sampleCount == 16 || sampleCount == benchmarkSamples))
+				{
+					savePixels(state, pixels, "bench_" + benchmarkName + "_" + std::to_string(sampleCount) + ".png");
+					if (sampleCount == benchmarkSamples)
+					{
+						running = false;
+					}
+				}
 			}
 			
 		}
@@ -337,6 +347,21 @@ void cleanup(SDLState& state)
 	SDL_DestroyRenderer(state.render);
 	SDL_DestroyWindow(state.window);
 	SDL_Quit();
+}
+
+void savePixels(const SDLState& state, std::vector<uint32_t>& pixels, const std::string& name)
+{
+	SDL_Surface* shot = SDL_CreateSurfaceFrom(state.width, state.height, SDL_PIXELFORMAT_ARGB8888, pixels.data(), state.width * sizeof(uint32_t));
+
+	if (shot)
+	{
+		if (!IMG_SavePNG(shot, name.c_str()))
+		{
+			SDL_Log("Save failed: %s", SDL_GetError());
+		}
+
+		SDL_DestroySurface(shot);
+	}
 }
 
 uint32_t toPixel(const Vec3& color)
