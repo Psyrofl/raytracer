@@ -23,7 +23,6 @@
 #include "constant_medium.h"
 #include "sampling.h"
 
-// Set from the command line in benchmark mode: raytracer.exe halton 1024
 bool useHalton = false;
 
 
@@ -107,7 +106,6 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-	// Benchmark mode saves at 16 samples and at benchmarkSamples, then quits
 	int benchmarkSamples = 0;
 	std::string benchmarkName;
 	if (argc >= 3)
